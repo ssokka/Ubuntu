@@ -69,6 +69,7 @@ auth_login() {
 }
 
 get_account() {
+	echo
 	local pattern="\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}\b"
 	ACCOUNT=$(echo $(gcloud auth list 2>&1) | grep -Eo ${pattern})
 	if [[ "${ACCOUNT}" == "" ]]; then
