@@ -3,7 +3,7 @@
 # GitHub : https://github.com/ssokka/Ubuntu/blob/master/gsa-gen
 
 # 스크립트
-# 설명      : 구글 서비스 계정 생성기
+# 설명      : 구글 서비스 계정 생성
 # 실행 환경 : 리눅스 Bash
 # 개발 환경 : windows 10 x64 wsl2 ubuntu 20.04 tls
 # 한줄 실행 : curl https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen | bash -
@@ -59,13 +59,13 @@ install_sdk() {
 	fi
 	if [ ! -f "/usr/bin/gcloud" ]; then
 		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 미설치"
+		exit
 	fi
 }
 
 auth_login() {
 	echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 자격 증명"
 	gcloud auth revoke --all &>/dev/null
-	sleep 0.5s
 	gcloud auth login
 }
 
@@ -225,7 +225,7 @@ count_sas() {
 	echo -e "$(timestamp) [INFO]   + 서비스 이메일 ${cnt_e}개, 파일 ${DIR_WORK}/${FILE_EMAIL}"
 }
 
-unset() {
+unset_config() {
 	if [[ "${ACCOUNT}" != "" ]]; then
 		echo
 		echo -e "$(timestamp) [INFO] 프로젝트 해제 ${PROJECT}"
@@ -257,7 +257,7 @@ main() {
 		done
 	done
 	count_sas
-	unset
+	unset_config
 }
 
 main
