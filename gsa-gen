@@ -49,27 +49,33 @@ timestamp(){
 }
 
 install_sdk() {
-	if [ ! -f "/usr/bin/gcloud" ]; then
+	local bin=/usr/bin/gcloud
+	if [ ! -f ${bin} ]; then
+		echo
 		echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 설치"
-		local tmp=/etc/apt/sources.list.d/google-cloud-sdk.list
-		sudo rm -f "${tmp}"
-		echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a "${tmp}"
+		local list=/etc/apt/sources.list.d/google-cloud-sdk.list
+		sudo rm -f "${list}"
+		echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a "${list}"
 		curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
 		sudo apt update -y && sudo apt install google-cloud-sdk -y
 	fi
-	if [ ! -f "/usr/bin/gcloud" ]; then
-		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 미설치"
+	if [ ! -f ${bin} ]; then
+		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 설치 확인 필요"
+		echo -e "$(timestamp) + dpkg --list | grep google-cloud-sdk"
+		echo
 		exit
 	fi
 }
 
 auth_login() {
+	echo
 	echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 자격 증명"
-	gcloud auth revoke --all &>/dev/null
-	gcloud auth login
-}
-
-get_account() {
+	gcloud auth login --brief
+	if [ $? != 0 ]; then
+		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 자격 증명 실패"
+		echo
+		exit
+	fi
 	echo
 	local pattern="\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}\b"
 	ACCOUNT=$(echo $(gcloud auth list 2>&1) | grep -Eo ${pattern})
@@ -129,6 +135,7 @@ create_projects() {
 }
 
 enable_apis() {
+	echo
 	local e_apis=("drive.googleapis.com") # 필수 apis
 	local d_apis="" # 불필요 apis
 	local filter=""
@@ -160,8 +167,8 @@ create_sas() {
 	local list=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d)
 	local total=$(echo "${list}" | wc -l)
 	if [ -n "${list}" ]; then
-		local count=1
 		echo
+		local count=1
 		for email in ${list}; do
 			echo -en "$(timestamp) [INFO] 기존 서비스 계정 삭제 (키 다중 생성 방지) : $(printf "%03d" ${count})/$(printf "%03d" ${total})개\r"
 			gcloud iam service-accounts delete ${email} --quiet &>/dev/null
@@ -169,11 +176,11 @@ create_sas() {
 		done
 		echo
 	fi
+	echo
 	local tes=""    # total email string
 	local ess=",\n" # email string separator
 	FILE_EMAIL="accounts-${PROJECT}.txt"
 	touch "${DIR_WORK}/${FILE_EMAIL}"
-	echo
 	echo -e "$(timestamp) [INFO] 생성"
 	for num_s in $(seq -f "%03g" 1 ${NUM_SAS_PER_PROJECT}); do
 		# num_s = service account number
@@ -208,6 +215,7 @@ create_sas() {
 }
 
 count_sas() {
+	echo
 	sleep 1s
 	# service accounts count
 	local cnt_s=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d | wc -l)
@@ -218,7 +226,6 @@ count_sas() {
 	fi
 	# service accounts email count
 	local cnt_e=$(cat "${DIR_WORK}/${FILE_EMAIL}" | wc -l)
-	echo
 	echo -e "$(timestamp) [INFO] 확인"
 	echo -e "$(timestamp) [INFO]   + 서비스 계정   ${cnt_s}개"
 	echo -e "$(timestamp) [INFO]   + 서비스 키     ${cnt_k}개, 폴더 ${DIR_WORK}/${DIR_KEY}/"
@@ -232,8 +239,6 @@ unset_config() {
 		gcloud config unset project &>/dev/null
 		echo -e "$(timestamp) [INFO] 구글 계정 해제 ${ACCOUNT}"
 		gcloud config unset account &>/dev/null
-		echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 자격 증명 해제 ${ACCOUNT}"
-		gcloud auth revoke --all &>/dev/null
 	fi
 	if [ -f "${DIR_WORK}/${FILE_EMAIL}" ]; then
 		echo
@@ -243,14 +248,13 @@ unset_config() {
 				cat "${DIR_WORK}/${FILE_EMAIL}"
 			;;
 		esac
+		echo
 	fi
 }
 
 main() {
-	echo
 	install_sdk
 	auth_login
-	get_account
 	for function in create_projects enable_apis create_sas; do
 		for PROJECT_NUM in $(seq -f "%02g" ${PROJECT_START} ${PROJECT_END}); do
 			eval ${function} "${PROJECT_NUM}"
