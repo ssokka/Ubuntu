@@ -1,9 +1,10 @@
 #!/bin/bash
 
+# ubuntu utf-8 lf
+
 # 스크립트
 # 설명 : 구글 서비스 계정 생성
 # 실행 : curl https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen | bash -
-# 버전 : 2020.08.12-01
 # 환경 : 리눅스 계열 bash
 # 확인 : windows 10 x64 wsl2 ubuntu 20.04 tls
 # 제작 : 에레이
