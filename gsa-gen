@@ -24,7 +24,7 @@
 # 3가지 변수(PROJECT_START, PROJECT_END, PROJECT_INFIX)는 무시된다.
 PROJECT_EXIST=""        # 기존 프로젝트 이름
 PROJECT_START=1         # 프로젝트 시작 번호
-PROJECT_END=1           # 프로젝트 종료 번호
+PROJECT_END=2           # 프로젝트 종료 번호
 PROJECT_INFIX=rclone    # 프로젝트 이름 접요사
 NUM_SAS_PER_PROJECT=100 # 프로젝트 당 서비스 계정 생성 갯수, 최대 100개
 DIR_WORK=$(pwd)         # 기본 저장 경로
@@ -215,7 +215,7 @@ create_sas() {
 	echo -e ${tes} > "${FILE_EMAIL}"
 }
 
-count_sas() {
+check_sas() {
 	echo
 	sleep 1s
 	# service accounts count
@@ -233,15 +233,8 @@ count_sas() {
 	echo -e "$(timestamp) [INFO]   + 서비스 이메일 ${cnt_e}개, 파일 ${DIR_WORK}/${FILE_EMAIL}"
 }
 
-unset_config() {
-	if [[ "${ACCOUNT}" != "" ]]; then
-		echo
-		echo -e "$(timestamp) [INFO] 프로젝트 해제 ${PROJECT}"
-		gcloud config unset project &>/dev/null
-		echo -e "$(timestamp) [INFO] 구글 계정 해제 ${ACCOUNT}"
-		gcloud config unset account &>/dev/null
-	fi
-	if [ -f "${DIR_WORK}/${FILE_EMAIL}" ]; then
+sas_email() {
+	if [ -f "${DIR_WORK}/${FILE_EMAIL}" && $((${PROJECT_END}-${PROJECT_START})) == 0 ]; then
 		echo
 		read -p "$(timestamp) [NOTICE] 서비스 계정 이메일 확인 (y/n)? " answer
 		case ${answer:0:1} in
@@ -256,13 +249,11 @@ unset_config() {
 main() {
 	install_sdk
 	auth_login
-	for function in create_projects enable_apis create_sas; do
-		for PROJECT_NUM in $(seq -f "%02g" ${PROJECT_START} ${PROJECT_END}); do
+	for PROJECT_NUM in $(seq -f "%02g" ${PROJECT_START} ${PROJECT_END}); do
+		for function in create_projects enable_apis create_sas check_sas sas_email; do
 			eval ${function} "${PROJECT_NUM}"
 		done
 	done
-	count_sas
-	unset_config
 }
 
 main
