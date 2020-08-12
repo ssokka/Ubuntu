@@ -37,6 +37,8 @@ NUM_SAS_PER_PROJECT=100 # 프로젝트 당 서비스 계정 생성 갯수, 최�
 DIR_WORK=$(pwd)         # 기본 저장 경로
 DIR_KEY=accounts        # 서비스 계정 키 저장 폴더
 
+# 코드 수정 금지
+
 if [ -n "${PROJECT_EXIST}" ]; then
 	PROJECT_START=1
 	PROJECT_END=1
