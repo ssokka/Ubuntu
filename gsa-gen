@@ -70,6 +70,7 @@ install_sdk() {
 auth_login() {
 	echo
 	echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 자격 증명"
+	gcloud auth revoke --all &>/dev/null
 	gcloud auth login --brief
 	if [ $? != 0 ]; then
 		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 자격 증명 실패"
