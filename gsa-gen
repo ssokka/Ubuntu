@@ -81,6 +81,7 @@ get_account() {
 		gcloud config set account ${ACCOUNT} &>/dev/null
 	else
 		echo -e "$(timestamp) [ERROR] 구글 계정 확인 필요 ${ACCOUNT}"
+		exit
 	fi
 }
 
