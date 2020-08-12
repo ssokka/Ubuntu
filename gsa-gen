@@ -37,7 +37,7 @@ DIR_KEY=accounts        # 서비스 계정 키 저장 폴더
 # gcloud            : https://cloud.google.com/sdk/gcloud/reference?hl=ko
 # sa-gen            : https://github.com/88lex/sa-gen
 
-# 코드 수정 금지
+
 
 if [ -n "${PROJECT_EXIST}" ]; then
 	PROJECT_START=1
