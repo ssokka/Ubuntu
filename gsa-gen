@@ -1,21 +1,41 @@
 #!/bin/bash
 
 # 스크립트
+<<<<<<< HEAD
 # 설명 : 구글 서비스 계정 생성
 # 실행 : curl https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen | bash -
 # 버전 : 2020.08.12-01
 # 환경 : 리눅스 계열 bash
 # 확인 : windows 10 x64 wsl2 ubuntu 20.04 tls
 # 제작 : 에레이
+=======
+# 실행   : ./gsa-gen
+# 버전   : 2020.08.12-01
+# 환경   : 리눅스 계열 bash
+# 제작자 : 에레이
+# 테스트 : windows 10 x64 wsl2 ubuntu 20.04 tls
+>>>>>>> 874f499d57d186665f298314d14f7a5f22687635
 
 # 특징
 # 불필요한 Google APIs 제거
 # 서비스 계정 및 키 파일을 일정한 규칙으로 생성
 # 구글 그룹스에 서비스 계정 추가 시 복사/붙여넣기용 텍스트 파일 생성
 
+<<<<<<< HEAD
 # 변수
 PROJECT_START=1         # 프로젝트 시작 번호
 PROJECT_END=1           # 프로젝트 종료 번호
+=======
+# 참고
+# Google 서비스 계정 : https://cloud.google.com/iam/docs/service-accounts?hl=ko
+# Google Cloud SDK   : https://cloud.google.com/sdk/docs?hl=ko
+# gcloud             : https://cloud.google.com/sdk/gcloud/reference?hl=ko
+# sa-gen             : https://github.com/88lex/sa-gen
+
+# 변수
+PROJECT_START=2         # 프로젝트 시작 번호
+PROJECT_END=2           # 프로젝트 종료 번호
+>>>>>>> 874f499d57d186665f298314d14f7a5f22687635
 PROJECT_INFIX=rclone    # 프로젝트 이름 접요사
 NUM_SAS_PER_PROJECT=100 # 프로젝트 당 서비스 계정 수, 최대 100개
 DIR_WORK=$(pwd)         # 기본 저장 경로
@@ -103,8 +123,8 @@ create_projects() {
 }
 
 enable_apis() {
-	local e_apis=("drive.googleapis.com")	# 필수 apis
-	local d_apis=""							# 불필요 apis
+	local e_apis=("drive.googleapis.com") # 필수 apis
+	local d_apis=""                       # 불필요 apis
 	local filter=""
 	local tmp=""
 	for api in ${e_apis[@]}; do
@@ -131,13 +151,13 @@ create_sas() {
 	FILE_EMAIL="accounts-${PROJECT}.txt"
 	local e_str=""
 	local separator=",\n"
-    touch "${DIR_WORK}/${FILE_EMAIL}"
+	touch "${DIR_WORK}/${FILE_EMAIL}"
 	for num_s in $(seq -f "%03g" 1 ${NUM_SAS_PER_PROJECT}); do
 		if [ ${num_s} == ${NUM_SAS_PER_PROJECT} ]; then
 			separator=""
 		fi
 		local num_p=${1:-}
-        local name="p-${num_p}-sa-${num_s}"
+		local name="p-${num_p}-sa-${num_s}"
 		local prefix=${name}@${PROJECT}
 		local email=${prefix}.iam.gserviceaccount.com
 		echo -en "$(timestamp) [INFO] 서비스 계정 생성 : ${num_s}/${NUM_SAS_PER_PROJECT}\r"
@@ -178,7 +198,7 @@ check_sas() {
 			((total_e++))
 		fi
 	done
-    echo -e "$(timestamp) [INFO] 서비스 계정   : ${total_s}개"
+	echo -e "$(timestamp) [INFO] 서비스 계정   : ${total_s}개"
 	echo -e "$(timestamp) [INFO] 서비스 키     : ${total_k}개, 경로 : ${DIR_WORK}/${DIR_KEY}/"
 	echo -e "$(timestamp) [INFO] 서비스 이메일 : ${total_e}개, 경로 : ${DIR_WORK}/${FILE_EMAIL}"
 }
