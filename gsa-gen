@@ -57,7 +57,9 @@ install_sdk() {
 		curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
 		sudo apt update -y && sudo apt install google-cloud-sdk -y
 	fi
-	exit
+	if [ ! -f "/usr/bin/gcloud" ]; then
+		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 미설치"
+	fi
 }
 
 auth_login() {
