@@ -224,7 +224,7 @@ count_sas() {
 	echo -e "$(timestamp) [INFO]   + 서비스 이메일 ${cnt_e}개, 파일 ${DIR_WORK}/${FILE_EMAIL}"
 }
 
-exit() {
+unset() {
 	if [[ "${ACCOUNT}" != "" ]]; then
 		echo
 		echo -e "$(timestamp) [INFO] 구글 계정 해제 ${ACCOUNT}"
@@ -254,7 +254,7 @@ main() {
 		done
 	done
 	count_sas
-	exit
+	unset
 }
 
 main
