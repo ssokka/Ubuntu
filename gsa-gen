@@ -65,6 +65,7 @@ install_sdk() {
 auth_login() {
 	echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 자격 증명"
 	gcloud auth revoke --all &>/dev/null
+	sleep 0.5s
 	gcloud auth login
 }
 
@@ -227,10 +228,12 @@ count_sas() {
 unset() {
 	if [[ "${ACCOUNT}" != "" ]]; then
 		echo
-		echo -e "$(timestamp) [INFO] 구글 계정 해제 ${ACCOUNT}"
-		gcloud config unset account &>/dev/null
 		echo -e "$(timestamp) [INFO] 프로젝트 해제 ${PROJECT}"
 		gcloud config unset project &>/dev/null
+		echo -e "$(timestamp) [INFO] 구글 계정 해제 ${ACCOUNT}"
+		gcloud config unset account &>/dev/null
+		echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 자격 증명 해제 ${ACCOUNT}"
+		gcloud auth revoke --all &>/dev/null
 	fi
 	if [ -f "${DIR_WORK}/${FILE_EMAIL}" ]; then
 		echo
