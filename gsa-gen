@@ -17,7 +17,7 @@
 
 # 기종 프로젝트 이름을 사용할 경우 아래
 # PROJECT_EXIST=""를 PROJECT_EXIST="기존프로젝트이름"으로
-# 변경하여 사용하시기 바랍니다.
+# 수정하여 사용하시기 바랍니다.
 
 # 변수
 # PROJECT_EXIST 변수를 지정할 경우
@@ -63,10 +63,9 @@ install_sdk() {
 }
 
 auth_login() {
-	if [[ $(gcloud auth list 2>&1) != *"Credentialed"* ]]; then
-		echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 자격 증명"
-		gcloud auth login
-	fi
+	echo -e "$(timestamp) [INFO] 구글 클라우드 SDK 자격 증명"
+	gcloud auth revoke --all &>/dev/null
+	gcloud auth login
 }
 
 get_account() {
