@@ -90,6 +90,7 @@ create_projects() {
 		PROJECT=${ID}-${PROJECT_INFIX}-${1:-}
 	else
 		PROJECT=${PROJECT_EXIST}
+		echo -e "$(timestamp) [INFO] 기존 프로젝트 이름 ${PROJECT_EXIST}"
 	fi
 	if [[ $(gcloud projects list 2>&1) != *"${PROJECT}"* ]]; then
 		echo -e "$(timestamp) [INFO] 프로젝트 생성 ${PROJECT}"
