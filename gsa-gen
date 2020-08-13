@@ -234,7 +234,7 @@ check_sas() {
 }
 
 sas_email() {
-	if [ -f "${DIR_WORK}/${FILE_EMAIL}" && $((${PROJECT_END}-${PROJECT_START})) == 0 ]; then
+	if [[ -f "${DIR_WORK}/${FILE_EMAIL}" && $((${PROJECT_END}-${PROJECT_START})) == 0 ]]; then
 		echo
 		read -p "$(timestamp) [NOTICE] 서비스 계정 이메일 확인 (y/n)? " answer
 		case ${answer:0:1} in
