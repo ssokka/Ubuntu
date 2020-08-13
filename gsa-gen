@@ -20,7 +20,7 @@
 
 # 한줄 실행 방법
 # 스크립트 기본 변수 값 사용 시
-# curl https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen && bash gsa-gen
+# curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen && bash gsa-gen
 
 # 다운로드 후 실행 방법
 # 스크립트 변수 값 수정 사용 시
