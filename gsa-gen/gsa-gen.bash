@@ -10,10 +10,10 @@
 OLD_PROJECT_NAME=""
 
 # 프로젝트 시작 번호
-PROJECT_START=2
+PROJECT_START=1
 
 # 프로젝트 종료 번호
-PROJECT_END=2
+PROJECT_END=1
 
 # 프로젝트명 접두사
 PROJECT_PREFIX=rclone
