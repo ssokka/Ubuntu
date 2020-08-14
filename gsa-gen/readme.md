@@ -33,7 +33,7 @@
 
 - PROJECT_ID=""
   - 기존 프로젝트 수정 시 사용
-  - 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_PREFIX)는 무시
+  - 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_PREFIX)는 무시된다.
 
 - PROJECT_START=1
   - 프로젝트 시작 번호
@@ -44,8 +44,8 @@
 - PROJECT_PREFIX=rclone
   - 프로젝트 ID 접두사
 
-- NUM_SAS_PER_PROJECT=100
-  - 프로젝트 당 서비스 계정 생성 개수
+- SAS_LIMIT=100
+  - 서비스 계정 생성 개수
 
 - DIR_WORK=${HOME}
   - 기본 작업 폴더
@@ -64,13 +64,13 @@
 - Windows 10 WSL Ubuntu
 - 기타 Bash Shell
 
-## 변수 값 기본 사용 시
+## 변수 값 기본 사용
 
 |번호|명령어|
 |:---:|:---|
 |1|```curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash && bash gsa-gen.bash```|
 
-## 변수 값 수정 사용 시
+## 변수 값 수정 사용
 
 |번호|명령어|
 |:---:|:---|
@@ -86,7 +86,7 @@
 - SJVA Docker
 - 기타 Sh Shell
 
-## 변수 값 기본 사용 시
+## 변수 값 기본 사용
 - SJVA Docker 사용 시 실행 위치
   - SJVA 웹 >> 시스템 >> Command
 
@@ -96,7 +96,7 @@
 |참고|첫 실행 시 장시간 화면이 멈춰있다면 "닫기" 후 다시 "실행"|
 |2|```sh /app/data/command/gsa-gen.sh```|
 
-## 변수 값 수정 사용 시
+## 변수 값 수정 사용
 
 |번호|명령어|
 |:---:|:---|
