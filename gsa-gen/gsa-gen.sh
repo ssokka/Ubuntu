@@ -7,6 +7,6 @@
 # https://sjva.me/bbs/board.php?bo_table=tip&wr_id=1581
 
 path=/app/data/command/gsa-gen.bash
-curl -o ${path} https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen.bash
+curl -o ${path} https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash
 sed -i '1s/bash/sh/' ${path}
 sh /app/data/command/gsa-gen.bash
