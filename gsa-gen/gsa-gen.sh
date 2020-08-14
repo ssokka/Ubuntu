@@ -4,7 +4,7 @@
 # utf-8 lf
 
 # 설명 및 사용 방법
-# https://sjva.me/bbs/board.php?bo_table=tip&wr_id=1581
+# https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
 
 path=/app/data/command/gsa-gen.bash

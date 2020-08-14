@@ -3,23 +3,23 @@
 # 인코딩
 # utf-8 lf
 
-# 설명 및 사용 방법
-# https://sjva.me/bbs/board.php?bo_table=tip&wr_id=1581
+# GitHub
+# https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
 # 기존 프로젝트명, 기존 프로젝트 수정 시 사용
-OLD_PROJECT_NAME=""
+PROJECT_ID=""
 
 # 프로젝트 시작 번호
 PROJECT_START=1
 
 # 프로젝트 종료 번호
-PROJECT_END=1
+PROJECT_END=2
 
 # 프로젝트명 접두사
 PROJECT_PREFIX=rclone
 
 # 프로젝트 당 서비스 계정 생성 개수, 최대 100개
-NUM_SAS_PER_PROJECT=100
+SAS_LIMIT=100
 
 # 기본 작업 폴더
 DIR_WORK=${HOME}
@@ -31,7 +31,7 @@ DIR_KEY=accounts
 DIR_SJVA_WORK="/app/data/rclone_expand"
 
 init() {
-	if [[ -n "${OLD_PROJECT_NAME}" ]]; then
+	if [[ -n "${PROJECT_ID}" ]]; then
 		PROJECT_START=1
 		PROJECT_END=1
 	fi
@@ -121,9 +121,9 @@ auth() {
 }
 
 create_projects() {
-	if [[ -n "${OLD_PROJECT_NAME}" ]]; then
+	if [[ -n "${PROJECT_ID}" ]]; then
 		# 기존 프로젝트 이름
-		PROJECT=${OLD_PROJECT_NAME}
+		PROJECT=${PROJECT_ID}
 	else
 		# 신규 프로젝트 이름 : xxx-rclone01
 		# ${1:-} : 프로젝트 번호 by for loop
@@ -242,12 +242,12 @@ create_sas() {
 	
 	echo -e "$(timestamp) 서비스 계정"
 	local stime=$(date +"%s")
-	for num_s in $(seq 1 ${NUM_SAS_PER_PROJECT}); do
-		if [[ ${num_s} == ${NUM_SAS_PER_PROJECT} ]]; then
+	for num_s in $(seq 1 ${SAS_LIMIT}); do
+		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
 			ess=""
 		fi
 		num_s=$(printf "%03d" ${num_s})
-		NUM_SAS_PER_PROJECT=$(printf "%03d" ${NUM_SAS_PER_PROJECT})
+		SAS_LIMIT=$(printf "%03d" ${SAS_LIMIT})
 
 		# 프로젝트 번호
 		local num_p=${1:-}
@@ -262,25 +262,25 @@ create_sas() {
 		local email=${prefix}.iam.gserviceaccount.com
 		
 		# 서비스 계정 생성
-		echo -en "$(timestamp) + 생성   ${num_s}/${NUM_SAS_PER_PROJECT}개 ${name}\r"
+		echo -en "$(timestamp) + 생성   ${num_s}/${SAS_LIMIT}개 ${name}\r"
 		gcloud iam service-accounts create ${name} &>/dev/null
-		if [[ ${num_s} == ${NUM_SAS_PER_PROJECT} ]]; then
+		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
 			echo
 		fi
 		
 		# 서비스 계정 키 생성
-		echo -en "$(timestamp) + 키     ${num_s}/${NUM_SAS_PER_PROJECT}개\r"
+		echo -en "$(timestamp) + 키     ${num_s}/${SAS_LIMIT}개\r"
 		gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${prefix}.json" --iam-account=${email} &>/dev/null
-		if [[ ${num_s} == ${NUM_SAS_PER_PROJECT} ]]; then
+		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
 			echo
 		fi
 		
 		# 서비스 계정 이메일 저장
-		echo -en "$(timestamp) + 이메일 ${num_s}/${NUM_SAS_PER_PROJECT}개\r"
+		echo -en "$(timestamp) + 이메일 ${num_s}/${SAS_LIMIT}개\r"
 		if [[ ${tes} != *"${email}"* ]]; then
 			tes+=${email}${ess}
 		fi
-		if [[ ${num_s} == ${NUM_SAS_PER_PROJECT} ]]; then
+		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
 			echo
 		fi
     done
