@@ -3,92 +3,32 @@
 # 인코딩
 # utf-8 lf
 
-# GitHub
-# https://github.com/ssokka/Ubuntu/blob/master/gsa-gen
+# 설명 및 사용 방법
+# https://sjva.me/bbs/board.php?bo_table=tip&wr_id=1581
 
-# 구글 서비스 계정 생성 스크립트
-
-# 실행 환경
-# 우분투, 윈도우 WSL 우분투, SJVA 도커
-
-# 개발 환경
-# windows 10 x64 wsl2 ubuntu 20.04 tls
-
-# 특징
-# 불필요한 Google APIs 제거
-# 일정한 규칙의 프로젝트명, 서비스 계정명, 키 파일명 생성
-# 서비스 계정 키 중복 방지
-# 구글 그룹에 서비스 계정 추가 시 복사/붙여넣기용 텍스트 파일 생성
-# SJVA 도커 환경 실행 가능
-
-# [Cn] 명령줄
-
-# 일반(네이티브) 환경 - 스크립트 기본 변수 값 사용 시 한줄 실행
-# [C1] curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen && bash gsa-gen
-
-# 일반(네이티브) 환경 - 스크립트 변수 값 수정 후 실행
-# [C1] curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen
-# [C2] vi gsa-gen
-# [C3] bash gsa-gen
-
-# SJVA 도커 환경
-# SJVA 웹 >> 시스템 >> Command
-# [C1] apk add --no-cache bash
-# [C1] curl -o /app/data/command/gsa-gen https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen
-# [C2] bash /app/data/command/gsa-gen
-
-# 변수
-# 기존 프로젝트명(OLD_PROJECT_NAME)을 지정할 경우
-# 3개의 변수(PROJECT_START, PROJECT_END, PROJECT_PREFIX)는 무시된다.
-
-# 변수 - 기존 프로젝트명, 기존 프로젝트 수정 시 사용
+# 기존 프로젝트명, 기존 프로젝트 수정 시 사용
 OLD_PROJECT_NAME=""
 
-# 변수 - 프로젝트 시작 번호
+# 프로젝트 시작 번호
 PROJECT_START=2
 
-# 변수 - 프로젝트 종료 번호
+# 프로젝트 종료 번호
 PROJECT_END=2
 
-# 변수 - 프로젝트명 접두사
+# 프로젝트명 접두사
 PROJECT_PREFIX=rclone
 
-# 변수 - 프로젝트 당 서비스 계정 생성 개수, 최대 100개
+# 프로젝트 당 서비스 계정 생성 개수, 최대 100개
 NUM_SAS_PER_PROJECT=100
 
-# 변수 - 기본 작업 폴더
+# 기본 작업 폴더
 DIR_WORK=${HOME}
 
-# 변수 - SJVA 도커 Rclone Expand 작업 폴더
-DIR_SJVA_WORK="/app/data/rclone_expand"
-
-# 변수 - 서비스 계정 키 폴더
+# 서비스 계정 키 폴더
 DIR_KEY=accounts
 
-# 규칙(예시)
-# 서비스 계정 키 파일 : xxx-p01-sa001@xxx-rclone01.json
-# xxx : 구글 계정
-# p01 : 프로젝트 번호
-# sa001 : 서비스 계정 번호
-# rclone01 : 프로젝트명
-
-# 참고 : 구글 서비스 계정
-# https://cloud.google.com/iam/docs/service-accounts?hl=ko
-
-# 참고 : 구글 클라우드 SDK
-# https://cloud.google.com/sdk/docs?hl=ko
-
-# 참고 : gcloud
-# https://cloud.google.com/sdk/gcloud/reference?hl=ko
-
-# 참고 : sa-gen
-# https://github.com/88lex/sa-gen
-
-# 참고 : AutoRclone
-# https://github.com/xyou365/AutoRclone
-
-# 참고 : gclone
-# https://github.com/donwa/gclone
+# SJVA 도커 Rclone Expand 작업 폴더
+DIR_SJVA_WORK="/app/data/rclone_expand"
 
 init() {
 	if [[ -n "${OLD_PROJECT_NAME}" ]]; then
