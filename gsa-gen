@@ -282,7 +282,7 @@ create_sas() {
 		local stime=$(date +"%s")
 		for email in ${list}; do
 			echo -en "$(timestamp) 기존 서비스 계정 삭제 (키 중복 방지) $(printf "%03d" ${count})/${total}개\r"
-			#gcloud iam service-accounts delete ${email} --quiet &>/dev/null
+			gcloud iam service-accounts delete ${email} --quiet &>/dev/null
 			((count++))
 		done
 		echo
@@ -323,14 +323,14 @@ create_sas() {
 		
 		# 서비스 계정 생성
 		echo -en "$(timestamp) + 생성   ${num_s}/${NUM_SAS_PER_PROJECT}개 ${name}\r"
-		#gcloud iam service-accounts create ${name} &>/dev/null
+		gcloud iam service-accounts create ${name} &>/dev/null
 		if [[ ${num_s} == ${NUM_SAS_PER_PROJECT} ]]; then
 			echo
 		fi
 		
 		# 서비스 계정 키 생성
 		echo -en "$(timestamp) + 키     ${num_s}/${NUM_SAS_PER_PROJECT}개\r"
-		#gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${prefix}.json" --iam-account=${email} &>/dev/null
+		gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${prefix}.json" --iam-account=${email} &>/dev/null
 		if [[ ${num_s} == ${NUM_SAS_PER_PROJECT} ]]; then
 			echo
 		fi
