@@ -1,18 +1,19 @@
-# 구글 서비스 계정 생성
+# 구글 서비스 계정 [참고](https://cloud.google.com/iam/docs/service-accounts?hl=ko)
 
-- 구글 서비스 계정 [참고](https://cloud.google.com/iam/docs/service-accounts?hl=ko)
 - 구글 계정당 12개 프로젝트 생성 가능 (삭제 대기 프로젝트 포함)
 - 30일 후 삭제 대기 프로젝트 완전 삭제
 - 프로젝트당 서비스 계정 생성 최대 개수 100개 [참고](https://cloud.google.com/iam/docs/faq#what_is_the_maximum_number_of_service_accounts_i_can_have_in_a_project)
 - 구글 서비스 계정당 일일 업로드 제한 750GByte
 
 
+# 스크립트
+
 ## 특징
 
 - 불필요한 Google APIs 제거
-- 일정한 규칙의 프로젝트 ID, 서비스 ID, 키 파일 적용
+- 프로젝트 ID, 서비스 ID, 키 파일 이름 생성 규칙 적용
 - 서비스 계정 키 중복 방지 (기존 서비스 계정 삭제)
-- 서비스 계정 이메일 목록 텍스트 파일 생성
+- 서비스 계정 이메일 목록 파일 생성
 - Sh SHELL (SJVA Docker) 환경 실행 가능
 
 
@@ -67,16 +68,16 @@
 
 |번호|명령어|
 |:---|:-----|
-|1---|```curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash && bash gsa-gen.bash```|
+|1|```curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash && bash gsa-gen.bash```|
 
 ## 변수 값 수정 사용 시
 
 |번호|명령어|
 |:---|:-----|
-|1---|```curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash```|
-|2---|```vi gsa-gen.bash```|
-|----|변수 값 수정|
-|3---|```bash gsa-gen.bash```|
+|1|```curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash```|
+|2|```vi gsa-gen.bash```|
+||변수 값 수정|
+|3|```bash gsa-gen.bash```|
 
 
 # gsa-gen.sh
@@ -91,19 +92,19 @@
 
 |번호|명령어|
 |:---|:-----|
-|1---|```curl -o /app/data/command/gsa-gen.sh https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.sh```|
+|1|```curl -o /app/data/command/gsa-gen.sh https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.sh```|
 |참고|첫 실행 시 장시간 화면이 멈춰있다면 "닫기" 후 다시 "실행"|
-|2---|```sh /app/data/command/gsa-gen.sh```|
+|2|```sh /app/data/command/gsa-gen.sh```|
 
 ## 변수 값 수정 사용 시
 
 |번호|명령어|
 |:---|:-----|
-|1---|```curl -o /app/data/command/gsa-gen.bash https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen.bash```|
-|2---|```vi gsa-gen.bash```|
-|----|변수 값 수정|
-|3---|```apk add --no-cache bash```|
-|4---|```bash /app/data/command/gsa-gen.bash```|
+|1|```curl -o /app/data/command/gsa-gen.bash https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen.bash```|
+|2|```vi gsa-gen.bash```|
+||변수 값 수정|
+|3|```apk add --no-cache bash```|
+|4|```bash /app/data/command/gsa-gen.bash```|
 
 
 ## 생성 규칙 (예시)
@@ -149,15 +150,8 @@
 
 ## 참고
 
-- 구글 서비스 계정
-  - https://cloud.google.com/iam/docs/service-accounts?hl=ko
-- 구글 클라우드 SDK
-  - https://cloud.google.com/sdk/docs?hl=ko
-- gcloud
-  - https://cloud.google.com/sdk/gcloud/reference?hl=ko
-- sa-gen
-  - https://github.com/88lex/sa-gen
-- AutoRclone
-  - https://github.com/xyou365/AutoRclone
-- gclone
-  - https://github.com/donwa/gclone
+- [구글 클라우드 SDK](https://cloud.google.com/sdk/docs?hl=ko)
+- [gcloud](https://cloud.google.com/sdk/gcloud/reference?hl=ko)
+- [sa-gen](https://github.com/88lex/sa-gen)
+- [AutoRclone](https://github.com/xyou365/AutoRclone)
+- [gclone](https://github.com/donwa/gclone)
