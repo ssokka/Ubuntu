@@ -1,13 +1,10 @@
 # 구글 서비스 계정 생성
 
-- 구글 서비스 계정
-  - https://cloud.google.com/iam/docs/service-accounts?hl=ko
+- 구글 서비스 계정 [참고](https://cloud.google.com/iam/docs/service-accounts?hl=ko)
 - 구글 계정당 12개 프로젝트 생성 가능 (삭제 대기 프로젝트 포함)
-  - https://cloud.google.com/iam/docs/faq#what_is_the_maximum_number_of_service_accounts_i_can_have_in_a_project
-- 삭제 대기 프로젝트는 30일 후 완전 삭제
+- 30일 후 삭제 대기 프로젝트 완전 삭제
+- 프로젝트당 서비스 계정 생성 최대 개수 100개 [참고](https://cloud.google.com/iam/docs/faq#what_is_the_maximum_number_of_service_accounts_i_can_have_in_a_project)
 - 구글 서비스 계정당 일일 업로드 제한 750GByte
-- 주목적
-  - 구글 드라이브 일일 업로드 제한 750GByte 우회
 
 
 ## 특징
@@ -70,16 +67,16 @@
 
 |번호|명령어|
 |:---|:-----|
-|1---|curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash && bash gsa-gen.bash|
+|1---|```curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash && bash gsa-gen.bash```|
 
 ## 변수 값 수정 사용 시
 
 |번호|명령어|
 |:---|:-----|
-|1---|curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash|
-|2---|vi gsa-gen.bash|
+|1---|```curl -O https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash```|
+|2---|```vi gsa-gen.bash```|
 |----|변수 값 수정|
-|3---|bash gsa-gen.bash|
+|3---|```bash gsa-gen.bash```|
 
 
 # gsa-gen.sh
@@ -94,19 +91,19 @@
 
 |번호|명령어|
 |:---|:-----|
-|1---|curl -o /app/data/command/gsa-gen.sh https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.sh|
+|1---|```curl -o /app/data/command/gsa-gen.sh https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.sh```|
 |참고|첫 실행 시 장시간 화면이 멈춰있다면 "닫기" 후 다시 "실행"|
-|2---|sh /app/data/command/gsa-gen.sh|
+|2---|```sh /app/data/command/gsa-gen.sh```|
 
 ## 변수 값 수정 사용 시
 
 |번호|명령어|
 |:---|:-----|
-|1---|curl -o /app/data/command/gsa-gen.bash https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen.bash|
-|2---|vi gsa-gen.bash|
+|1---|```curl -o /app/data/command/gsa-gen.bash https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen.bash```|
+|2---|```vi gsa-gen.bash```|
 |----|변수 값 수정|
-|3---|apk add --no-cache bash|
-|4---|bash /app/data/command/gsa-gen.bash|
+|3---|```apk add --no-cache bash```|
+|4---|```bash /app/data/command/gsa-gen.bash```|
 
 
 ## 생성 규칙 (예시)
