@@ -13,7 +13,7 @@ OLD_PROJECT_NAME=""
 PROJECT_START=1
 
 # 프로젝트 종료 번호
-PROJECT_END=1
+PROJECT_END=2
 
 # 프로젝트명 접두사
 PROJECT_PREFIX=rclone
@@ -237,8 +237,8 @@ create_sas() {
 	local ess=",\n"						
 
 	# 서비스 계정 이메일 정보 파일 : account-rclone01-xxx.txt
-	FILE_EMAIL="${PROJECT}.txt"
-	touch "${DIR_WORK}/${FILE_EMAIL}"
+	FILE_EMAIL="${DIR_WORK}/${PROJECT}.txt"
+	touch "${FILE_EMAIL}"
 	
 	echo -e "$(timestamp) 서비스 계정"
 	local stime=$(date +"%s")
@@ -306,17 +306,17 @@ check_sas() {
 	echo -e "$(timestamp) + 서비스 키     ${cnt_k}개, 폴더 ${DIR_WORK}/${DIR_KEY}/"
 	
 	# 서비스 계정 이메일 개수 확인
-	local cnt_e=$(cat "${DIR_WORK}/${FILE_EMAIL}" | wc -l)
-	echo -e "$(timestamp) + 서비스 이메일 ${cnt_e}개, 파일 ${DIR_WORK}/${FILE_EMAIL}"
+	local cnt_e=$(cat "${FILE_EMAIL}" | wc -l)
+	echo -e "$(timestamp) + 서비스 이메일 ${cnt_e}개, 파일 ${FILE_EMAIL}"
 	echo
 }
 
 sas_email() {
-	if [[ -f "${DIR_WORK}/${FILE_EMAIL}" && $((${PROJECT_END}-${PROJECT_START})) == 0 ]]; then
+	if [[ -f "${FILE_EMAIL}" && $((${PROJECT_END}-${PROJECT_START})) == 0 ]]; then
 		read -p "$(timestamp) 서비스 계정 이메일 확인 (y/n)? " answer
 		case ${answer:0:1} in
 			y|Y)
-				cat "${DIR_WORK}/${FILE_EMAIL}"
+				cat "${FILE_EMAIL}"
 			;;
 		esac
 		echo
