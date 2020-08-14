@@ -6,7 +6,14 @@
 # 설명 및 사용 방법
 # https://sjva.me/bbs/board.php?bo_table=tip&wr_id=1581
 
+
 path=/app/data/command/gsa-gen.bash
 curl -o ${path} https://raw.githubusercontent.com/ssokka/ubuntu/master/gsa-gen/gsa-gen.bash
-sed -i '1s/bash/sh/' ${path}
-sh /app/data/command/gsa-gen.bash
+
+if [[ -f "${path}" ]]; then
+    apk add --no-cache bash
+    which bash &>/dev/null
+    if [[ $? == 0 ]]; then
+        bash /app/data/command/gsa-gen.bash
+    fi
+fi
