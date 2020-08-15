@@ -6,7 +6,8 @@
 # GitHub
 # https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
-# 프로젝트 이름, 기존 프로젝트 수정 시 사용
+# 프로젝트 이름
+# 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_PREFIX)는 무시된다.
 PROJECT_NAME=""
 
 # 프로젝트 시작 번호
@@ -117,10 +118,10 @@ auth() {
 
 create_projects() {
 	if [[ -n "${PROJECT_NAME}" ]]; then
-		# 기존 프로젝트 이름
+		# 프로젝트 이름 지정
 		PROJECT=${PROJECT_NAME}
 	else
-		# 신규 프로젝트 이름 : xxx-rclone01
+		# 프로젝트 이름 자동 : xxx-rclone01
 		# ${1:-} : 프로젝트 번호 by for loop
 		PROJECT="${ID}-${PROJECT_PREFIX}${1:-}"
 	fi

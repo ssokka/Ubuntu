@@ -32,7 +32,6 @@
 ## 변수
 
 - PROJECT_NAME=""
-  - 기존 프로젝트 수정 시 사용
   - 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_PREFIX)는 무시된다.
 
 - PROJECT_START=1
