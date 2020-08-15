@@ -6,8 +6,8 @@
 # GitHub
 # https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
-# 프로젝트 ID, 기존 프로젝트 수정 시 사용
-PROJECT_ID=""
+# 프로젝트 이름, 기존 프로젝트 수정 시 사용
+PROJECT_NAME=""
 
 # 프로젝트 시작 번호
 PROJECT_START=1
@@ -31,7 +31,7 @@ DIR_KEY=accounts
 DIR_SJVA_WORK="/app/data/rclone_expand"
 
 init() {
-	if [[ -n "${PROJECT_ID}" ]]; then
+	if [[ -n "${PROJECT_NAME}" ]]; then
 		PROJECT_START=1
 		PROJECT_END=1
 	fi
@@ -44,25 +44,22 @@ init() {
 }
 
 timestamp(){
-	echo -e "[$(date '+%Y-%m-%d %H:%M:%S')]"
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
 
 runtime() {
 	local diff=$((($(date +"%s")-$1)))
-	echo -e "$(timestamp) + 소요 시간 $((${diff}/3600))h:$((${diff}/60))m:$((${diff}%60))s"
+	echo "$(timestamp) + 소요 시간 $((${diff}/3600))h:$((${diff}/60))m:$((${diff}%60))s"
 }
 
 install() {
 	which bash &>/dev/null
 	if [[ $? != 0 ]]; then
-		echo -e "$(timestamp) Bash 설치"
-		echo
+		echo -e "$(timestamp) Bash 설치\n"
 		apk add --no-cache bash
 		which bash &>/dev/null
 		if [[ $? != 0 ]]; then
-			echo
-			echo -e "$(timestamp) [ERROR] Bash 설치 실패"
-			echo
+			echo -e "$(timestamp) [ERROR] Bash 설치 실패\n"
 			exit
 		fi
 		echo
@@ -70,8 +67,7 @@ install() {
 	export PATH=$PATH:$HOME/google-cloud-sdk/bin
 	which gcloud &>/dev/null
 	if [[ $? != 0 ]]; then
-		echo -e "$(timestamp) 구글 클라우드 SDK 설치"
-		echo
+		echo -e "$(timestamp) 구글 클라우드 SDK 설치\n"
 		curl https://sdk.cloud.google.com > install.sh && bash install.sh --disable-prompts
 		which gcloud &>/dev/null
 		if [[ $? == 0 ]]; then
@@ -120,9 +116,9 @@ auth() {
 }
 
 create_projects() {
-	if [[ -n "${PROJECT_ID}" ]]; then
+	if [[ -n "${PROJECT_NAME}" ]]; then
 		# 기존 프로젝트 이름
-		PROJECT=${PROJECT_ID}
+		PROJECT=${PROJECT_NAME}
 	else
 		# 신규 프로젝트 이름 : xxx-rclone01
 		# ${1:-} : 프로젝트 번호 by for loop
@@ -323,9 +319,7 @@ sas_email() {
 }
 
 main() {
-	echo
-	echo -e "$(timestamp) 구글 서비스 계정 생성 스크립트"
-	echo
+	echo -e "\n$(timestamp) 구글 서비스 계정 생성 스크립트\n"
 	init
 	install
 	auth
