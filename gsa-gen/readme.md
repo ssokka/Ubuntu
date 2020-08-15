@@ -32,7 +32,13 @@
 ## 변수
 
 - PROJECT_NAME=""
-  - 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_PREFIX)는 무시된다.
+  - 프로젝트 이름
+    - 사용 시
+      - 지정한 이름대로 사용됩니다.
+      - 3개 변수(PROJECT_START, PROJECT_END, PROJECT_SUFFIX)는 무시됩니다.
+    - 미사용 시
+      - 자동으로 지정됩니다.
+      - 형식 xxx-p01-sa008@xxx-rclone01
 
 - PROJECT_START=1
   - 프로젝트 시작 번호
@@ -40,8 +46,8 @@
 - PROJECT_END=1
   - 프로젝트 종료 번호
 
-- PROJECT_PREFIX=rclone
-  - 프로젝트 ID 접두사
+- PROJECT_SUFFIX=rclone
+  - 프로젝트 이름 접미사
 
 - SAS_LIMIT=100
   - 서비스 계정 생성 개수
@@ -119,7 +125,7 @@
 - sa001
   - 서비스 계정 번호
 - rclone01
-  - 프로젝트 ID
+  - 프로젝트 이름
 
 
 ## 업데이트 내역

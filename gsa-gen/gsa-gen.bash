@@ -7,7 +7,7 @@
 # https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
 # 프로젝트 이름
-# 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_PREFIX)는 무시된다.
+# 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_SUFFIX)는 무시된다.
 PROJECT_NAME=""
 
 # 프로젝트 시작 번호
@@ -16,8 +16,8 @@ PROJECT_START=1
 # 프로젝트 종료 번호
 PROJECT_END=1
 
-# 프로젝트명 접두사
-PROJECT_PREFIX=rclone
+# 프로젝트명 접미사
+PROJECT_SUFFIX=rclone
 
 # 프로젝트 당 서비스 계정 생성 개수, 최대 100개
 SAS_LIMIT=100
@@ -123,7 +123,7 @@ create_projects() {
 	else
 		# 프로젝트 이름 자동 : xxx-rclone01
 		# ${1:-} : 프로젝트 번호 by for loop
-		PROJECT="${ID}-${PROJECT_PREFIX}${1:-}"
+		PROJECT="${ID}-${PROJECT_SUFFIX}${1:-}"
 	fi
 	
 	gcloud config set project ${PROJECT} &>/dev/null
@@ -251,7 +251,7 @@ create_sas() {
 		# 서비스 계정 이름 : xxx-p01-sa001
 		local name="${ID}-p${num_p}-sa${num_s}"
 		
-		# 서비스 계정 이메일 접두사 : xxx-p01-sa001@xxx-rclone01
+		# 서비스 계정 이메일 접미사 : xxx-p01-sa001@xxx-rclone01
 		local prefix=${name}@${PROJECT}
 		
 		# 서비스 계정 이메일
