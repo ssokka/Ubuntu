@@ -34,9 +34,10 @@
 - [Google Cloud SDK](https://cloud.google.com/sdk/docs/downloads-interactive#silent)
   - 자동 설치됩니다.
   - 삭제 명령어
-  |번호|명령어|
-  |:---:|:---|
-  |1|```rm -rf ${HOME}/google-cloud-sdk & rm -rf ${HOME}/.config/gcloud```|
+
+    |번호|명령어|
+    |:---:|:---|
+    |1|```rm -rf ${HOME}/google-cloud-sdk & rm -rf ${HOME}/.config/gcloud```|
 
 - Bash Shell
   - Sh Shell 환경(SJVA Docker)일 경우 자동 설치됩니다.
