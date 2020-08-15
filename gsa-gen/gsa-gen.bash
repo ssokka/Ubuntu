@@ -6,14 +6,14 @@
 # GitHub
 # https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
-# 기존 프로젝트명, 기존 프로젝트 수정 시 사용
+# 프로젝트 ID, 기존 프로젝트 수정 시 사용
 PROJECT_ID=""
 
 # 프로젝트 시작 번호
 PROJECT_START=1
 
 # 프로젝트 종료 번호
-PROJECT_END=2
+PROJECT_END=1
 
 # 프로젝트명 접두사
 PROJECT_PREFIX=rclone
