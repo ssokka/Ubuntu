@@ -150,7 +150,11 @@
 
 ## 스크린샷
 
+### Windows 10 x64 WSL2 Uuntu 20.04 TLS
+
 ![](https://cdn.discordapp.com/attachments/700986162201755689/743827576715214949/unknown.png)
+
+### SJVA Docker (SJVA 웹 >> 시스템 >> Command)
 
 ![](https://cdn.discordapp.com/attachments/700986162201755689/743735960096735283/unknown.png)
 
@@ -161,6 +165,8 @@
 ![](https://cdn.discordapp.com/attachments/700986162201755689/743737464019222628/unknown.png)
 
 ![](https://cdn.discordapp.com/attachments/700986162201755689/743737490577555466/unknown.png)
+
+### SJVA Docker (SJVA 웹 >> 시스템 >> FileBrowser.xyz)
 
 ![](https://cdn.discordapp.com/attachments/700986162201755689/743738071454973962/unknown.png)
 
