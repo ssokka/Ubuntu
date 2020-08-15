@@ -97,7 +97,6 @@ auth() {
 	echo -e "   + 5. 인증 코드 입력(Enter verification code)에 붙여넣으세요."
 	echo
 	gcloud auth login --brief
-	echo
 	if [[ $? != 0 ]]; then
 		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 자격 증명 실패"
 		echo
