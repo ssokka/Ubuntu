@@ -6,7 +6,7 @@ cat << EOF
 
 사용법: bash $0 SOURCE TARGET TASK_NAME COMMAND
 
-버전: 2020.08.28.04
+버전: 2020.08.29.01
 
 동일한 작업은 이전 작업 이름으로 설정해야 작업 시간을 절약할 수 있습니다.
 
@@ -40,7 +40,7 @@ COMMAND   명령, 필수
                         활용 옵션  target-deup-dir.log
 
           lsf           파일 목록
-                        SOURCE     결과 파일이 존재할 경우 15분 후 실행
+                        파일 갱신  10분
                         TARGET     SOURCE 파일 목록과 같지 않을 경우 실행
                         자동 실행  dupe, dupe-dir
 
@@ -111,7 +111,7 @@ runtime() {
 	# $1: start time
 	# $2: end time
 	# $3: minute
-	local diff=$((`date -d "$2" +%s`-`date -d "$1" +%s`))
+	local diff=$(($2-$1))
 	if [[ $diff -lt 0 ]]; then
 		echo "0d 0h 0m 0s"
 	else
@@ -264,7 +264,7 @@ check_file() {
 clone() {
 	# $1: path
 	# $2: task
-	# $3: log on/off
+	# $3: log off
 	local path="$1" task="$2" loff="$3"
 	
 	# $tlmt: --transfers, -tpslimit, --tpslimit-burst
@@ -277,19 +277,19 @@ clone() {
 	case $path in
 	source)
 		path_ori="$source"
-		path_str="source | `printf "%-${pmax}s" $path_ori`"
+		path_str="`printf "%-${pmax}s" $path_ori` | source"
 	;;
 	target)
 		path_ori="$target"
-		path_str="target | `printf "%-${pmax}s" $path_ori`"
+		path_str="`printf "%-${pmax}s" $path_ori` | target"
 	;;
 	server)
-		path_str="source | `printf "%-${pmax}s" $source` | target | `printf "%-${pmax}s" $target`"
+		path_str="`printf "%-${pmax}s" $source` | source | `printf "%-${pmax}s" $target` | target"
 	;;
 	esac
 	
 	rm -f "$clog"
-	local opt_cm="--disable ListR --fast-list --no-traverse --tpslimit $tlmt --tpslimit-burst $tlmt --log-level INFO --log-file="$clog""
+	local opt_cm="--disable ListR --fast-list --no-traverse --tpslimit $tlmt --tpslimit-burst $tlmt --log-level DEBUG --log-file="$clog""
 	local opt_cp="--ignore-existing --progress --size-only --stats 1s --transfers $tlmt $opt_cm"
 	local opt_sv="--drive-server-side-across-configs $opt_cp"
 	
@@ -306,129 +306,116 @@ clone() {
 	# command
 	############################################################
 	case $task in
+	lsf)
+		log="$tdir/$path-$task.log"
+		local run=1
+		case $path in
+		source)
+			if [[ `check_file "$slsf"` == 0 ]] && [[ $(runtime `date -r "$slsf" +%s` `date +%s` m) -lt 10 ]]; then
+				sort -o "$slsf" "$slsf"
+				log="$slsf"
+				run=0
+			fi
+		;;
+		target)
+			if [[ `check_file "$tlsf"` == 0 ]] && [[ $(runtime `date -r "$tlsf" +%s` `date +%s` m) -lt 10 ]]; then
+				sort -o "$tlsf" "$tlsf"
+				log="$tlsf"
+				run=0
+			fi
+			if [[ $run == 0 ]] && [[ `check_file "$slsf" "$tlsf"` == 0 ]]; then
+				sort -o "$slsf" "$slsf"
+				sort -o "$tlsf" "$tlsf"
+				if [[ -n `cmp -s "$slsf" "$tlsf"` ]]; then
+					run=1
+				fi
+			fi
+		;;
+		esac
+		if [[ $run == 1 ]]; then
+			# detail lsf
+			# cmd+=("$rclone lsf \"$path_ori\" -R --format psti --files-only $opt_cm | sort > \"$log\"")
+			cmd+=("$gclone lsf \"$path_ori\" -R --files-only $opt_cm | sort > \"$log\"")
+		fi
+	;;
 	copy)
 		log="$clog"
 		data="$tdir/target-lsf.log"
-		if [[ `check_file "$data"` == 1 ]]; then
-			clone target lsf
-		fi
-		local exclude
+		clone target lsf
+		local exclude=""
+		local etmp="$temp/target-lsf-exclude.log"
 		if [[ `check_file "$tlsf"` == 0 ]]; then
-			#exclude=" --exclude-from \"$tlsf\""
-			local etmp="$temp/target-lsf-exclude.log"
 			cat "$tlsf" | sed -e 's/\[/\\\[/g' -e 's/\]/\\\]/g' > "$etmp"
-			exclude=" --exclude-from \"$etmp\""
-		else
-			exclude=""
+			if [[ `check_file "$etmp"` == 0 ]]; then
+				exclude=" --exclude-from \"$etmp\""
+			fi
 		fi
 		cmd+=("$gclone copy \"$source\" \"$target\"${exclude} $opt_sv")
 	;;
 	dedupe) # dedupe not support --include-from
 		log="$tdir/$path-$task-dir.log"
 		data="$tdir/$path-dupe-dir.log"
-		if [[ `check_file "$data"` == 1 ]]; then
-			clone $path dupe-dir 0
-		fi
+		clone $path dupe-dir
 		if [[ `check_file "$data"` == 0 ]]; then
+			IFS=$'\n'
 			for item in `cat "$data"`; do
 				cmd+=("$gclone dedupe \"${path_ori}${item}\" --dedupe-mode newest --drive-use-trash=false $opt_cm")
 			done
-		fi
-	;;
-	lsf)
-		log="$tdir/$path-$task.log"
-		local run=1
-		case $path in
-		source)
-			if [[ `check_file "$slsf"` == 0 ]] && [[ $(runtime `date -r "$slsf"` `date` m) -gt 15 ]]; then
-				log="$slsf"
-				run=0
-			fi
-		;;
-		target)
-			if [[ `check_file "$slsf" "$tlsf"` == 0 ]]; then
-				sort -o "$slsf" "$slsf"
-				sort -o "$tlsf" "$tlsf"
-				if `cmp -s "$slsf" "$tlsf"`; then
-					log="$tlsf"
-					run=0
-				fi
-			fi
-		;;
-		esac
-		if [[ $run == 1 ]]; then
-			# cmd+=("$rclone lsf \"$path_ori\" -R --format psti --files-only $opt_cm | sort > \"$log\"") # detail lsf
-			cmd+=("$rclone lsf \"$path_ori\" -R --files-only $opt_cm | sort > \"$log\"")
+			IFS=$oIFS
 		fi
 	;;
 	lsf-count)
+		clone $path lsf
 		log="$tdir/$path-lsf.log"
-		if [[ `check_file "$log"` == 1 ]]; then
-			clone $path lsf
-		fi
 	;;
 	dupe)
+		clone $path lsf-count
 		log="$tdir/$path-$task.log"
 		data="$tdir/$path-lsf.log"
-		if [[ `check_file "$data"` == 1 ]]; then
-			clone $path lsf-count 0
-		fi
 		if [[ `check_file "$data"` == 0 ]]; then
 			cmd+=("cat \"$data\" | uniq -d > \"$log\"")
 		fi
 	;;
 	dupe-dir)
+		clone $path dupe
 		log="$tdir/$path-$task.log"
 		data="$tdir/$path-dupe.log"
-		if [[ `check_file "$data"` == 1 ]]; then
-			clone $path dupe 0
-		fi
 		if [[ `check_file "$data"` == 0 ]]; then
 			cmd+=("cat \"$data\" | xargs dirname | uniq -u > \"$log\"")
 		fi
 	;;
-	old)
-		log="$tdir/$path-$task.log"
-		if [[ `check_file "$slsf"` == 1 ]]; then
-			clone source lsf 0
-		fi
-		if [[ `check_file "$tlsf"` == 1 ]]; then
-			clone target lsf 0
-		fi
-		if [[ `check_file "$slsf" "$tlsf"` == 0 ]]; then
-			cmd+=("comm -13 <(sort \"$slsf\") <(sort \"$tlsf\") > \"$log\"")
-		fi
-	;;
-	old-delete)
-		log="$clog"
-		data="$tdir/target-old.log"
-		if [[ `check_file "$data"` == 1 ]]; then
-			clone target old
-		fi
-		if [[ `check_file "$data"` == 0 ]]; then
-			cmd+=("$rclone delete \"$path_ori\" --files-from \"$data\" --drive-use-trash=false $opt_cm")
-		fi
-	;;
 	miss)
-		log="$tdir/$path-$task.log"
-		if [[ `check_file "$slsf"` == 1 ]]; then
-			clone source lsf
-		fi
-		if [[ `check_file "$tlsf"` == 1 ]]; then
-			clone target lsf
-		fi
+		clone source lsf
+		clone target lsf
+		log="$tdir/target-$task.log"
 		if [[ `check_file "$slsf" "$tlsf"` == 0 ]]; then
 			cmd+=("comm -13 <(sort \"$tlsf\") <(sort \"$slsf\") > \"$log\"")
 		fi
 	;;
 	miss-copy)
+		clone target miss
 		log="$clog"
-		data="$tdir/$path-miss.log"
-		if [[ `check_file "$data"` == 1 ]]; then
-			clone target miss 1
-		fi
+		data="$tdir/target-miss.log"
+		path_str="`printf "%-${pmax}s" $target` | target"
 		if [[ `check_file "$data"` == 0 ]]; then
 			cmd+=("$gclone copy \"$source\" \"$target\" --files-from \"$data\" $opt_sv")
+		fi
+	;;
+	old)
+		clone source lsf
+		clone target lsf
+		log="$tdir/target-$task.log"
+		if [[ `check_file "$slsf" "$tlsf"` == 0 ]]; then
+			cmd+=("comm -13 <(sort \"$slsf\") <(sort \"$tlsf\") > \"$log\"")
+		fi
+	;;
+	old-delete)
+		clone target old
+		log="$clog"
+		data="$tdir/target-old.log"
+		path_str="`printf "%-${pmax}s" $target` | target"
+		if [[ `check_file "$data"` == 0 ]]; then
+			cmd+=("$gclone delete \"$path_ori\" --files-from \"$data\" --drive-use-trash=false $opt_cm")
 		fi
 	;;
 	rmdirs)
@@ -445,9 +432,10 @@ clone() {
 	# run
 	############################################################
 	if [[ ${#cmd[@]} != 0 ]]; then
-		local stime=`date`
+		local stime=`date +%s`
+		IFS=$'\n'
 		for item in "${cmd[@]}"; do
-			if [[ $loff != 0 ]]; then
+			if [[ $loff != 1 ]]; then
 				log_fmt w TASK "$path_str | `printf "%-${tmax}s" $task` | $item"
 			fi
 			eval "$item"
@@ -458,7 +446,8 @@ clone() {
 				log_fmt r ERROR "$item"
 			fi
 		done
-		local etime=`date`
+		IFS=$oIFS
+		local etime=`date +%s`
 	fi
 	
 	############################################################
@@ -479,29 +468,42 @@ clone() {
 				esac
 				clst=`cat "$log" | grep "$cstr"`
 				count=`echo "$clst" | wc -l`
-				# echo "$clst" | tee -a "$tlog"
-				tail -n $tlmt "$clst" |  tee -a "$tlog"
-				# update target-lsf.log
-				case $task in 
-					copy|miss-copy)
-						echo "$clst" | cut -d ':' -f 4 | sed -e '/^\s/d' -e '/\s$/d' >> "$tlsf"
-					;;
-					dedupe|old-delete)
-						IFS=$'\n'
-						for item in $cstr; do
-							sed -i "/$item/d" "$tlsf"
-						done
-						IFS=$oIFS
-					;;
-				esac
-				sort -o "$tlsf" "$tlsf"
-				# log_fmt g INFO "$path_str | $cstr | $count | $tlsf"
+				if [[ $count != 0 ]]; then
+					echo -e "..........\n`echo "$clst" | tail -n $tlmt`" |  tee -a "$tlog"
+					case $task in 
+						copy|miss-copy)
+							echo "$clst" | cut -d ':' -f 4 | sed -e '/^\s/d' -e '/\s$/d' >> "$tlsf"
+						;;
+						dedupe|old-delete)
+							IFS=$'\n'
+							for item in $cstr; do
+								sed -i "/$item/d" "$tlsf"
+							done
+							IFS=$oIFS
+						;;
+					esac
+					sort -o "$tlsf" "$tlsf"
+					# log_fmt g INFO "$path_str | $cstr | $count | $tlsf"
+					case $task in 
+						miss-copy|old-delete)
+							local bname=`basename $data`
+							mv -f "$data" "$temp/${bname:0:-4}-`date "+%Y%m%d-%H%M%S"`.log" 2>/dev/null
+						;;
+					esac
+				fi
 			;;
 			size)
 				count=`sed -z 's/\n/ | /' "$log" | sed -e '/^\s/d' -e '/\s$/d' -e 's/\s\{1,\}/ /g'`
 			;;
 			*)
 				count=`sed '/^$/d' "$log" | wc -l`
+				if [[ $count != 0 ]]; then
+					case $task in 
+						miss|old)
+							echo -e "..........\n`cat "$log" | tail -n $tlmt`" |  tee -a "$tlog"
+						;;
+					esac
+				fi
 				if [[ $count == 0 ]] && [[ "$log" != "$clog" ]]; then
 					rm -f "$log"
 				fi
@@ -550,7 +552,7 @@ get_path
 # rclone="$rclone --config \"$rconf\""
 gclone="$gclone --config \"$gconf\""
 
-stime=`date`
+stime=`date +%s`
 
 case $command in
 all)
@@ -564,16 +566,12 @@ all)
 	clone source dupe-dir
 	clone target dupe-dir
 	
-	clone target old
 	clone target old-delete
 	
-	clone target miss
 	clone server miss-copy
 	
+	clone source lsf
 	clone target lsf
-
-	clone source lsf-count
-	clone target lsf-count	
 	
 	clone source size
 	clone target size
@@ -613,7 +611,7 @@ dedupe|old|old-delete|miss|rmdirs)
 *) usage; exit 1;;
 esac
 
-etime=`date`
+etime=`date +%s`
 log_fmt y INFO "runtime | `runtime $stime $etime`"
 log_fmt y END "========== ${title} =========="
 echo
