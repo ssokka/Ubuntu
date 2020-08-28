@@ -6,7 +6,7 @@ cat << EOF
 
 사용법: bash $0 SOURCE TARGET TASK_NAME COMMAND
 
-버전: 2020.08.28.02
+버전: 2020.08.28.03
 
 rclone과 gclone이 설치되어 있어야 합니다.
 
@@ -404,7 +404,10 @@ clone() {
 		fi
 		local exclude
 		if [[ `check_file "$tlsf"` == 0 ]]; then
-			exclude=" --exclude-from \"$tlsf\""
+			#exclude=" --exclude-from \"$tlsf\""
+			etmp="$temp/target-lsf-exclude.log"
+			cat "$tlsf" | sed -e 's\[/\\\[/g' -e 's/\]/\\\]/g' > "$etmp"
+			exclude=" --exclude-from \"$etmp\""
 		else
 			exclude=""
 		fi
