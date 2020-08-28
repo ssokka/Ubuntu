@@ -6,36 +6,17 @@ cat << EOF
 
 사용법: bash $0 SOURCE TARGET TASK_NAME COMMAND
 
-버전: 2020.08.28.03
-
-rclone과 gclone이 설치되어 있어야 합니다.
-
-rclone download : https://rclone.org/downloads
-gclone download : https://github.com/wiserain/gclone/releases
-
-rclone.conf와 gclone.conf의 섹션 이름과 root_folder_id는 서로 동일해야 합니다.
-아래는 예시입니다.
----------------------------------------------------
-| rclone.conf            | gclone.conf            |
-| -----------------------|----------------------- |
-| [source]               | [source]               |
-| root_folder_id = 12345 | root_folder_id = 12345 |
-| -----------------------|----------------------- |
-| [target]               | [target]               |
-| root_folder_id = 67890 | root_folder_id = 67890 |
----------------------------------------------------
-
-gclone의 폴더 ID 형식은 사용이 불가능합니다.
-gclone의 size, lsf 정보가 부정확합니다.
-gclone은 copy, miss-copy, dedupe 에만 사용됩니다.
+버전: 2020.08.28.04
 
 동일한 작업은 이전 작업 이름으로 설정해야 작업 시간을 절약할 수 있습니다.
+
+필수 설치 gclone
+          https://github.com/wiserain/gclone/releases
 
 SOURCE    필수
           source:folder
           source: SOURCE 섹션 이름, 필수
           folder  하위 폴더 이름, 선택
-                  
 
 TARGET    필수
           target:folder
@@ -59,9 +40,9 @@ COMMAND   명령, 필수
                         활용 옵션  target-deup-dir.log
 
           lsf           파일 목록
-                        SOURCE     결과 파일이 존재할 경우 30분 후 실행
+                        SOURCE     결과 파일이 존재할 경우 15분 후 실행
                         TARGET     SOURCE 파일 목록과 같지 않을 경우 실행
-                        자동 실행  lsf-count, dupe, dupe-dir
+                        자동 실행  dupe, dupe-dir
 
           lsf-count   * 파일 목록 개수
                         자동 실행  dupe, dupe-dir
@@ -81,20 +62,14 @@ COMMAND   명령, 필수
           miss-copy   * TARGET의 miss 파일 목록 복사
                         기본 옵션  --drive-server-side-across-configs
 
+          size         파일 개수 및 파일 크기
+
           rmdirs      * TARGET의 빈 폴더 삭제
                         기본 옵션  --drive-use-trash=false
-                        all 명령에서는 제외 
-
-          rsize         파일 개수, 크기
-                        rclone size
-
-          gsize         rsize 비교 분석용
-                        gclone size
-                        all 명령에서는 제외 
+                        all 명령에서 제외
 
 로그
      폴더   $basedir/TASK_NAME
-
      결과   [SOURCE|TARGET]-COMMAND.log
      개수   count-all.log
      크기   count-size.log
@@ -102,7 +77,6 @@ COMMAND   명령, 필수
      clone  clone.log
 
 EOF
-
 }
 
 ############################################################
@@ -134,14 +108,18 @@ timestamp(){
 }
 
 runtime() {
-	# $1: end time
-	# $2: start time
-	local diff=$((($2-$1)))
-	local s=$(($diff%60))
-	if [[ "$s" == "-"* ]]; then
-		echo "0h 0m 0s"
+	# $1: start time
+	# $2: end time
+	# $3: minute
+	local diff=$((`date -d "$2" +%s`-`date -d "$1" +%s`))
+	if [[ $diff -lt 0 ]]; then
+		echo "0d 0h 0m 0s"
 	else
-		echo "$(($diff/3600))h $((($diff/60)%60))m ${s}s"
+		if [[ $3 == m ]]; then
+			echo $(($diff/60))
+		else
+			echo "$(($diff/86400))d $((($diff/3600)%24))h $((($diff/60)%60))m $(($diff%60))s"
+		fi
 	fi
 }
 
@@ -165,9 +143,8 @@ echo_color() {
 
 log_msg=""
 log_fmt() {
-	local color=$1
-	local type=$2
-	log_msg="`timestamp` `printf "%-5s" "$type"` : $3"
+	local color="$1" type="$2" msg="$3"
+	log_msg="`timestamp` `printf "%-5s" "$type"` : $msg"
 	echo_color $color "$log_msg"
 	echo -e "$log_msg" >> "$tlog"
 	if [[ $type == COUNT ]]; then
@@ -223,7 +200,7 @@ get_path() {
 				path+="/app/bin/Darwin/$file;";;
 		esac
 	fi
-	check_path "$path" "$file" "rclone"
+	# check_path "$path" "$file" "rclone"
 	########################################################
 	file="rclone.conf"; unset path
 	########################################################
@@ -235,7 +212,7 @@ get_path() {
 	else
 		path+="/app/data/db/$file;"
 	fi
-	check_path "$path" "$file" "rconf"
+	# check_path "$path" "$file" "rconf"
 	########################################################
 	file="gclone"; unset path
 	########################################################
@@ -265,41 +242,20 @@ get_path() {
 check_file() {
 	case $# in
 		1)
-			if [[ -f $1 ]] && [[ `sed 's/^$//g' "$1" | wc -l` != 0 ]]; then
+			if [[ -f $1 ]] && [[ `sed '/^$/d' "$1" | wc -l` != 0 ]]; then
 				echo 0
-				return 0
 			else
 				echo 1
-				return 1
 			fi
 		;;
 		2)
-			if [[ -f $1 ]] && [[ `sed 's/^$//g' "$1" | wc -l` != 0 ]] && [[ -f $2 ]] && [[ `sed 's/^$//g' "$2" | wc -l` != 0 ]]; then
+			if [[ -f $1 ]] && [[ `sed '/^$/d' "$1" | wc -l` != 0 ]] && [[ -f $2 ]] && [[ `sed '/^$/d' "$2" | wc -l` != 0 ]]; then
 				echo 0
-				return 0
 			else
 				echo 1
-				return 1
 			fi
 		;;
 	esac
-}
-
-time_diff() {
-	local diff=$(($(date -d "$2" +%s)-$(date -d "$1" +%s)))
-	local sign d h m s
-	if [[ $diff -lt 0 ]]
-	then sign="-"; diff=${diff/^-/}
-	else sign="+"
-	fi
-	s=$(($diff%60))
-	diff=$(($diff/60))
-	m=$(($diff%60))
-	diff=$((diff/60))
-	h=$(($diff%24))
-	d=$(($diff/24))
-	# printf "$sign%d %.2d:%.2d:%.2d\n" $d $h $m $s
-	echo $m
 }
 
 ############################################################
@@ -309,13 +265,15 @@ clone() {
 	# $1: path
 	# $2: task
 	# $3: log on/off
+	local path="$1" task="$2" loff="$3"
 	
-	local logon=$3
+	# $tlmt: --transfers, -tpslimit, --tpslimit-burst
+	local tlmt=5
 	
+	local path_ori path_str
 	if [[ -z $pmax ]]; then
 		pmax=$((${#source}>${#target}?${#source}:${#target}))
 	fi
-	local path="$1" path_ori path_str
 	case $path in
 	source)
 		path_ori="$source"
@@ -330,26 +288,59 @@ clone() {
 	;;
 	esac
 	
-	local task="$2"
-	
-	local limit=5
 	rm -f "$clog"
-	local opt_cm="--disable ListR --fast-list --tpslimit $limit --tpslimit-burst $limit --log-level INFO --log-file="$clog""
-	local opt_cp="--ignore-existing --no-traverse --progress --size-only --stats 1s --transfers $limit $opt_cm"
-	local opt_sv="--drive-server-side-across-configs"
+	local opt_cm="--disable ListR --fast-list --no-traverse --tpslimit $tlmt --tpslimit-burst $tlmt --log-level INFO --log-file="$clog""
+	local opt_cp="--ignore-existing --progress --size-only --stats 1s --transfers $tlmt $opt_cm"
+	local opt_sv="--drive-server-side-across-configs $opt_cp"
 	
 	local log cmd data
 	local slsf="$tdir/source-lsf.log"
 	local tlsf="$tdir/target-lsf.log"
 	
+	if [[ -z $tmax ]]; then
+		mstr="old-delete"
+		tmax=${#mstr}
+	fi
+	
+	############################################################
+	# command
+	############################################################
 	case $task in
+	copy)
+		log="$clog"
+		data="$tdir/target-lsf.log"
+		if [[ `check_file "$data"` == 1 ]]; then
+			clone target lsf
+		fi
+		local exclude
+		if [[ `check_file "$tlsf"` == 0 ]]; then
+			#exclude=" --exclude-from \"$tlsf\""
+			local etmp="$temp/target-lsf-exclude.log"
+			cat "$tlsf" | sed -e 's/\[/\\\[/g' -e 's/\]/\\\]/g' > "$etmp"
+			exclude=" --exclude-from \"$etmp\""
+		else
+			exclude=""
+		fi
+		cmd+=("$gclone copy \"$source\" \"$target\"${exclude} $opt_sv")
+	;;
+	dedupe) # dedupe not support --include-from
+		log="$tdir/$path-$task-dir.log"
+		data="$tdir/$path-dupe-dir.log"
+		if [[ `check_file "$data"` == 1 ]]; then
+			clone $path dupe-dir 0
+		fi
+		if [[ `check_file "$data"` == 0 ]]; then
+			for item in `cat "$data"`; do
+				cmd+=("$gclone dedupe \"${path_ori}${item}\" --dedupe-mode newest --drive-use-trash=false $opt_cm")
+			done
+		fi
+	;;
 	lsf)
 		log="$tdir/$path-$task.log"
 		local run=1
 		case $path in
 		source)
-			local tfmt="+%Y/%m/%d %H:%M:%S"
-			if [[ `check_file "$slsf"` == 0 ]] && [[ $(time_diff `date -r "$slsf" "$tfmt"` `date "$tfmt"`) -lt 30 ]]; then
+			if [[ `check_file "$slsf"` == 0 ]] && [[ $(runtime `date -r "$slsf"` `date` m) -gt 15 ]]; then
 				log="$slsf"
 				run=0
 			fi
@@ -396,35 +387,6 @@ clone() {
 			cmd+=("cat \"$data\" | xargs dirname | uniq -u > \"$log\"")
 		fi
 	;;
-	copy)
-		log="$clog"
-		data="$tdir/target-lsf.log"
-		if [[ `check_file "$data"` == 1 ]]; then
-			clone target lsf
-		fi
-		local exclude
-		if [[ `check_file "$tlsf"` == 0 ]]; then
-			#exclude=" --exclude-from \"$tlsf\""
-			etmp="$temp/target-lsf-exclude.log"
-			cat "$tlsf" | sed -e 's/\[/\\\[/g' -e 's/\]/\\\]/g' > "$etmp"
-			exclude=" --exclude-from \"$etmp\""
-		else
-			exclude=""
-		fi
-		cmd+=("$gclone copy \"$source\" \"$target\"${exclude} $opt_sv $opt_cp")
-	;;
-	dedupe) # dedupe not support --include-from
-		log="$tdir/$path-$task-dir.log"
-		data="$tdir/$path-dupe-dir.log"
-		if [[ `check_file "$data"` == 1 ]]; then
-			clone $path dupe-dir 0
-		fi
-		if [[ `check_file "$data"` == 0 ]]; then
-			for item in `cat "$data"`; do
-				cmd+=("$gclone dedupe \"${path_ori}${item}\" --dedupe-mode newest --drive-use-trash=false --no-traverse $opt_cm")
-			done
-		fi
-	;;
 	old)
 		log="$tdir/$path-$task.log"
 		if [[ `check_file "$slsf"` == 1 ]]; then
@@ -463,46 +425,47 @@ clone() {
 		log="$clog"
 		data="$tdir/$path-miss.log"
 		if [[ `check_file "$data"` == 1 ]]; then
-			clone target miss 0
+			clone target miss 1
 		fi
 		if [[ `check_file "$data"` == 0 ]]; then
-			cmd+=("$gclone copy \"$source\" \"$target\" --files-from \"$data\" $opt_sv $opt_cp")
+			cmd+=("$gclone copy \"$source\" \"$target\" --files-from \"$data\" $opt_sv")
 		fi
 	;;
 	rmdirs)
 		log="$clog"
-		cmd+=("$rclone rmdirs \"$path_ori\" --leave-root --drive-use-trash=false $opt_cm")
+		cmd+=("$gclone rmdirs \"$path_ori\" --leave-root --drive-use-trash=false $opt_cm")
 	;;
-	rsize|gsize)
+	size)
 		log="$clog"
-		local exec
-		case $task in
-		rsize) exec="$rclone";;
-		gsize) exec="$gclone";;
-		esac
-		cmd+=("$exec size \"$path_ori\" --size-only $opt_cm > \"$log\"")
+		cmd+=("$gclone size \"$path_ori\" --size-only $opt_cm > \"$log\"")
 	;;
 	esac
 	
-	mstr="old-delete"
-	tmax=${#mstr}
-	
+	############################################################
+	# run
+	############################################################
 	if [[ ${#cmd[@]} != 0 ]]; then
-		local stime=`date +%s`
+		local stime=`date`
 		for item in "${cmd[@]}"; do
-			if [[ $logon != 0 ]]; then
+			if [[ $loff != 0 ]]; then
 				log_fmt w TASK "$path_str | `printf "%-${tmax}s" $task` | $item"
 			fi
 			eval "$item"
 			if [[ $? != 0 ]]; then
+				if [[ -f $clog ]]; then
+					item="\n$clog"
+				fi
 				log_fmt r ERROR "$item"
 			fi
 		done
-		local etime=`date +%s`
+		local etime=`date`
 	fi
 	
-	local count
-	if [[ -f "$log" ]]; then
+	############################################################
+	# count
+	############################################################
+	local count=0
+	if [[ -f $log ]]; then
 		case $task in
 			size|lsf) sed -i "/^gclone.*\?json$/d" "$log";; # clean
 		esac
@@ -510,19 +473,18 @@ clone() {
 			copy|miss-copy|old-delete|rmdirs)
 				local cstr
 				case $task in 
-					copy|miss-copy)
-						cstr="Copied";;
-					dedupe|old-delete)
-						cstr="Deleted";;
-					rmdirs)
-						cstr="Removing directory";;
+					copy|miss-copy) cstr="Copied";;
+					dedupe|old-delete) cstr="Deleted";;
+					rmdirs) cstr="Removing directory";;
 				esac
 				clst=`cat "$log" | grep "$cstr"`
 				count=`echo "$clst" | wc -l`
-				echo "$clst" | tee -a "$tlog"
+				# echo "$clst" | tee -a "$tlog"
+				tail -n $tlmt "$clst" |  tee -a "$tlog"
+				# update target-lsf.log
 				case $task in 
-					copy|miss-copy|rmdirs)
-						echo "$clst" | cut -f 4 -d ':' | sed -e 's/^\s//g' -e 's/\s$//g' >> "$tlsf"
+					copy|miss-copy)
+						echo "$clst" | cut -d ':' -f 4 | sed -e '/^\s/d' -e '/\s$/d' >> "$tlsf"
 					;;
 					dedupe|old-delete)
 						IFS=$'\n'
@@ -533,28 +495,23 @@ clone() {
 					;;
 				esac
 				sort -o "$tlsf" "$tlsf"
-				log_fmt g INFO "$path_str | $cstr | $count | $tlsf"
+				# log_fmt g INFO "$path_str | $cstr | $count | $tlsf"
 			;;
-			rsize|gsize)
-				count=`sed -z 's/\n/ | /' "$log" | sed -e 's/^\s//g' -e 's/\s$//g' -e 's/\s\{1,\}/ /g'`
+			size)
+				count=`sed -z 's/\n/ | /' "$log" | sed -e '/^\s/d' -e '/\s$/d' -e 's/\s\{1,\}/ /g'`
 			;;
 			*)
-				sed -i '/^$/d' "$log"
-				count=`cat "$log" | wc -l`
-				if [[ $count == 0 ]]; then
+				count=`sed '/^$/d' "$log" | wc -l`
+				if [[ $count == 0 ]] && [[ "$log" != "$clog" ]]; then
 					rm -f "$log"
 				fi
 			;;
 		esac
-	else
-		count=0
 	fi
-	if [[ $logon != 0 ]]; then
+	if [[ $loff != 1 ]]; then
 		log_fmt g COUNT "$path_str | `printf "%-${tmax}s" $task` | $count | `runtime $stime $etime`"
 		case $task in
-			rsize|gsize)
-				sed -i "1i$log_msg" "$cslog"
-			;;
+			size) sed -i "1i$log_msg" "$cslog";;
 		esac
 	fi
 }
@@ -590,44 +547,18 @@ log_fmt y INFO "command   | $4"
 log_fmt w INFO "path | `printf "%-11s" task` | $tdir"
 get_path
 
-rclone="$rclone --config \"$rconf\""
+# rclone="$rclone --config \"$rconf\""
 gclone="$gclone --config \"$gconf\""
 
-stime=`date +%s`
+stime=`date`
 
 case $command in
-#all)
-#	clone source size
-#	clone source lsf
-#	clone source dupe
-#
-#	clone server copy
-#	
-#	clone target dedupe
-#
-#	clone target lsf
-#
-#	clone target old
-#	clone target old-delete
-#
-#	clone target miss
-#	clone server miss-copy
-#
-#	clone target rmdirs
-#
-#	clone target size
-#	clone target lsf
-#	clone target lsf-count
-#	clone target dupe
-#;;
 all)
 	clone server copy
 	clone target dedupe
 	
 	clone source lsf
 	clone target lsf
-	clone source lsf-count
-	clone target lsf-count
 	clone source dupe
 	clone target dupe
 	clone source dupe-dir
@@ -639,20 +570,17 @@ all)
 	clone target miss
 	clone server miss-copy
 	
-	#clone target rmdirs
+	clone target lsf
+
+	clone source lsf-count
+	clone target lsf-count	
 	
-	clone target lsf-count
-	
-	clone source rsize
-	clone target rsize
-	#clone source gsize
-	#clone target gsize
+	clone source size
+	clone target size
 ;;
 lsf)
 	clone source $command
 	clone target $command
-	clone source lsf-count
-	clone target lsf-count
 	clone source dupe
 	clone target dupe
 	clone source dupe-dir
@@ -672,7 +600,7 @@ dupe)
 	clone source dupe-dir
 	clone target dupe-dir
 ;;
-dupe-dir|rsize|gsize)
+dupe-dir|size)
 	clone source $command
 	clone target $command
 ;;
@@ -685,7 +613,7 @@ dedupe|old|old-delete|miss|rmdirs)
 *) usage; exit 1;;
 esac
 
-etime=`date +%s`
+etime=`date`
 log_fmt y INFO "runtime | `runtime $stime $etime`"
 log_fmt y END "========== ${title} =========="
 echo
