@@ -406,7 +406,7 @@ clone() {
 		if [[ `check_file "$tlsf"` == 0 ]]; then
 			#exclude=" --exclude-from \"$tlsf\""
 			etmp="$temp/target-lsf-exclude.log"
-			cat "$tlsf" | sed -e 's\[/\\\[/g' -e 's/\]/\\\]/g' > "$etmp"
+			cat "$tlsf" | sed -e 's/\[/\\\[/g' -e 's/\]/\\\]/g' > "$etmp"
 			exclude=" --exclude-from \"$etmp\""
 		else
 			exclude=""
