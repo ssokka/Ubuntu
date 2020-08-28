@@ -638,7 +638,7 @@ all)
 	
 	#clone target rmdirs
 	
-	#clone target lsf
+	clone target lsf-count
 	
 	clone source rsize
 	clone target rsize
