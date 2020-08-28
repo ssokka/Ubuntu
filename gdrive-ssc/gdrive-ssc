@@ -83,12 +83,14 @@ COMMAND   명령, 필수
 
           rmdirs      * TARGET의 빈 폴더 삭제
                         기본 옵션  --drive-use-trash=false
+                        all 명령에서는 제외 
 
           rsize         파일 개수, 크기
                         rclone size
 
           gsize         rsize 비교 분석용
                         gclone size
+                        all 명령에서는 제외 
 
 로그
      폴더   $basedir/TASK_NAME
