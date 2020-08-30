@@ -4,7 +4,7 @@
 usage() {
 cat << EOF
 
-버전       2020.08.30.07
+버전       2020.08.30.08
 
 사용법     bash gdrive-ssc SOURCE TARGET TASK_NAME COMMAND
 
@@ -419,7 +419,7 @@ clone() {
 		if [[ `check_file "$data"` == true ]]; then
 			exist=true
 			run=true
-			cmd+=("cat \"$data\" | xargs -d '\n' dirname | uniq -u > \"$log\"")
+			cmd+=("cat \"$data\" | xargs -d '\n' dirname | sort -u > \"$log\"")
 		fi
 		debug $path $task data "$data"
 		debug $path $task exist $exist
@@ -431,7 +431,7 @@ clone() {
 			run=true
 			IFS=$'\n'
 			for item in `cat "$data"`; do
-				cmd+=("$gclone dedupe \"${path_ori}${item}\" --dedupe-mode newest --drive-use-trash=false $opt_cm")
+				cmd+=("$gclone dedupe \"${path_ori}/${item}\" --dedupe-mode newest --drive-use-trash=false $opt_cm")
 			done
 		fi
 		debug $path $task data "$data"
