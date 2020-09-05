@@ -72,6 +72,8 @@ install() {
 		curl https://sdk.cloud.google.com > install.sh && bash install.sh --disable-prompts
 		which gcloud &>/dev/null
 		if [[ $? == 0 ]]; then
+			source ${HOME}/google-cloud-sdk/completion.bash.inc
+			source ${HOME}/google-cloud-sdk/path.bash.inc
 			echo -e "$(timestamp) 구글 클라우드 SDK 삭제 명령어"
 			echo -e "$(timestamp) rm -rf ${HOME}/google-cloud-sdk"
 		else
@@ -118,9 +120,9 @@ auth() {
 
 create_projects() {
 	if [[ -z "${PROJECT_ID}" ]]; then
-		# 프로젝트 ID 자동 : xxx-rclone01
+		# 프로젝트 ID 자동 : id-rclone-1
 		# ${1:-} : 프로젝트 번호 by for loop
-		PROJECT_ID="${ID}-${PROJECT_SUFFIX}${1:-}"
+		PROJECT_ID="${ID}-${PROJECT_SUFFIX}-${1:-}"
 	fi
 	gcloud config set project ${PROJECT_ID} &>/dev/null
 	echo -e "$(timestamp) 프로젝트 목록"
@@ -230,8 +232,8 @@ create_sas() {
 	# 서비스 계정 이메일 내용 구분자
 	local ess=",\n"						
 
-	# 서비스 계정 이메일 정보 파일 : account-rclone01-xxx.txt
-	FILE_EMAIL="${DIR_WORK}/${PROJECT}.txt"
+	# 서비스 계정 이메일 정보 파일
+	FILE_EMAIL="${DIR_WORK}/account-${ID}-${PROJECT_NAME}.txt"
 	touch "${FILE_EMAIL}"
 	
 	echo -e "$(timestamp) 서비스 계정"
@@ -246,13 +248,13 @@ create_sas() {
 		# 프로젝트 번호
 		local num_p=${1:-}
 		
-		# 서비스 계정 이름 : xxx-p01-sa001
+		# 서비스 계정 이름 : id-p01-sa001
 		local name="${ID}-p${num_p}-sa${num_s}"
 		
-		# 서비스 계정 이메일 접미사 : xxx-p01-sa001@xxx-rclone01
-		local prefix=${name}@${ID}-${PROJECT_NAME}
+		# 서비스 계정 이메일 접미사 : id-p01-sa001@project_id
+		local prefix=${name}@${PROJECT_ID}
 		
-		# 서비스 계정 이메일
+		# 서비스 계정 이메일 : id-p01-sa001@project_name.iam.gserviceaccount.com
 		local email=${prefix}.iam.gserviceaccount.com
 		
 		# 서비스 계정 생성
@@ -264,7 +266,7 @@ create_sas() {
 		
 		# 서비스 계정 키 생성
 		echo -en "$(timestamp) + 키    ${num_s}/${SAS_LIMIT}개\r"
-		gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${prefix}.json" --iam-account=${email} &>/dev/null
+		gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${name}.json" --iam-account=${email} &>/dev/null
 		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
 			echo
 		fi
