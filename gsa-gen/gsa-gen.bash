@@ -6,9 +6,9 @@
 # GitHub
 # https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
-# 프로젝트 이름
+# 프로젝트 ID
 # 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_SUFFIX)는 무시된다.
-PROJECT_NAME=""
+PROJECT_ID=""
 
 # 프로젝트 시작 번호
 PROJECT_START=1
@@ -32,7 +32,7 @@ DIR_KEY=accounts
 DIR_SJVA_WORK="/app/data/rclone_expand"
 
 init() {
-	if [[ -n "${PROJECT_NAME}" ]]; then
+	if [[ -n "${PROJECT_ID}" ]]; then
 		PROJECT_START=1
 		PROJECT_END=1
 	fi
@@ -117,29 +117,25 @@ auth() {
 }
 
 create_projects() {
-	if [[ -n "${PROJECT_NAME}" ]]; then
-		# 프로젝트 이름 지정
-		PROJECT=${PROJECT_NAME}
-	else
-		# 프로젝트 이름 자동 : xxx-rclone01
+	if [[ -z "${PROJECT_ID}" ]]; then
+		# 프로젝트 ID 자동 : xxx-rclone01
 		# ${1:-} : 프로젝트 번호 by for loop
-		PROJECT="${ID}-${PROJECT_SUFFIX}${1:-}"
+		PROJECT_ID="${ID}-${PROJECT_SUFFIX}${1:-}"
 	fi
-	
-	gcloud config set project ${PROJECT} &>/dev/null
+	gcloud config set project ${PROJECT_ID} &>/dev/null
 	echo -e "$(timestamp) 프로젝트 목록"
 	local list=$(gcloud projects list)
 	echo -e "${list}"
 	echo
-	if [[ ${list} != *"${PROJECT}"* ]]; then
-		echo -e "$(timestamp) 프로젝트 생성 ${PROJECT}"
-		gcloud projects create ${PROJECT} &>/dev/null
+	if [[ ${list} != *"${PROJECT_ID}"* ]]; then
+		echo -e "$(timestamp) 프로젝트 생성 ${PROJECT_ID}"
+		gcloud projects create ${PROJECT_ID} &>/dev/null
 		local code=$?
 		if [[ ${code} != 0 ]]; then
-			echo -e "$(timestamp) [ERROR] 프로젝트 생성 불가 ${PROJECT}"
+			echo -e "$(timestamp) [ERROR] 프로젝트 생성 불가 ${PROJECT_ID}"
 			case ${code} in
 				1)
-					echo -e "+ 프로젝트 ID 중복 ${PROJECT}"
+					echo -e "+ 프로젝트 ID 중복 ${PROJECT_ID}"
 					;;
 				2)
 					echo -e "+ 프로젝트 ID 규칙 오류"
@@ -156,8 +152,10 @@ create_projects() {
 		fi
 		sleep 0.25s
 	fi
-	echo -e "$(timestamp) 프로젝트 선택 ${PROJECT}"
-	gcloud config set project ${PROJECT} &>/dev/null
+	echo -e "$(timestamp) 프로젝트 선택 ${PROJECT_ID}"
+	gcloud config set project ${PROJECT_ID} &>/dev/null
+	PROJECT_NAME=`gcloud projects list --filter="name=${PROJECT_ID}" --format="table(NAME)" | --format="table(NAME)" | sed -n '2p' | sed -e 's/^\s//' -e 's/\s$//'`
+	echo -e "$(timestamp) 프로젝트 이름 ${PROJECT_NAME}"
 	echo
 }
 
@@ -252,7 +250,7 @@ create_sas() {
 		local name="${ID}-p${num_p}-sa${num_s}"
 		
 		# 서비스 계정 이메일 접미사 : xxx-p01-sa001@xxx-rclone01
-		local prefix=${name}@${PROJECT}
+		local prefix=${name}@${PROJECT_NAME}
 		
 		# 서비스 계정 이메일
 		local email=${prefix}.iam.gserviceaccount.com
@@ -288,7 +286,7 @@ check_sas() {
 	sleep 1s
 	echo
 	echo -e "$(timestamp) 확인"
-	echo -e "$(timestamp) + 프로젝트      ${PROJECT}"
+	echo -e "$(timestamp) + 프로젝트 이름 ${PROJECT_NAME}"
 
 	# 서비스 계정 개수 확인
 	local cnt_s=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d | wc -l)

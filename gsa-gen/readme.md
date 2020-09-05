@@ -44,8 +44,8 @@
 
 ## 변수
 
-- PROJECT_NAME=""
-  - 프로젝트 이름
+- PROJECT_ID=""
+  - 프로젝트 ID
     - 사용 시
       - 지정한 이름대로 사용됩니다.
       - 3개 변수(PROJECT_START, PROJECT_END, PROJECT_SUFFIX)는 무시됩니다.
@@ -128,7 +128,7 @@
 ## 생성 규칙 (예시)
 
 - 서비스 계정 이메일
-  - xxx-p01-sa008@xxx-rclone01.iam.gserviceaccount.com
+  - xxx-p01-sa001@xxx-rclone01.iam.gserviceaccount.com
 - 서비스 계정 키 파일
   - xxx-p01-sa001@xxx-rclone01.json
 - xxx
@@ -143,6 +143,9 @@
 
 ## 업데이트 내역
 
+  - 2020.09.05-01
+    - PROJECT_NAME 변수 변경 : PROJECT_ID
+	- 서비스 계정 파일명 오류 수정
   - 2020.08.14-02
     - 실행 파일 분리 : gsa-gen.bash, gsa-gen.sh
   - 2020.08.14-01
