@@ -120,7 +120,7 @@ auth() {
 
 create_projects() {
 	if [[ -z "${PROJECT_ID}" ]]; then
-		# 프로젝트 ID 자동 : id-rclone-1
+		# 프로젝트 ID 자동 : id-rclone-01
 		# ${1:-} : 프로젝트 번호 by for loop
 		PROJECT_ID="${ID}-${PROJECT_SUFFIX}-${1:-}"
 	fi
@@ -264,9 +264,12 @@ create_sas() {
 			echo
 		fi
 		
+		# 서비스 계정 키 파일명 (json)
+		local json=${ID}-${PROJECT_NAME}-sa${num_s}
+		
 		# 서비스 계정 키 생성
 		echo -en "$(timestamp) + 키    ${num_s}/${SAS_LIMIT}개\r"
-		gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${name}.json" --iam-account=${email} &>/dev/null
+		gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${json}.json" --iam-account=${email} &>/dev/null
 		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
 			echo
 		fi
