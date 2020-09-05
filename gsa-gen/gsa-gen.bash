@@ -300,7 +300,7 @@ check_sas() {
 	# 서비스 계정 키 개수 확인
 	local cnt_k=0
 	if [[ -d "${DIR_WORK}/${DIR_KEY}" ]]; then
-		cnt_k=$(ls -al "${DIR_WORK}/${DIR_KEY}" | grep ".*@${PROJECT}\..*" | grep "^-" | awk "{print $9}" | wc -l)
+		cnt_k=$(ls -al "${DIR_WORK}/${DIR_KEY}/${ID}-${PROJECT_NAME}-*" | wc -l)
 	fi
 	echo -e "$(timestamp) + 서비스 키     ${cnt_k}개, 폴더 ${DIR_WORK}/${DIR_KEY}/"
 	
@@ -335,6 +335,7 @@ main() {
 			eval ${function} $(printf "%02d" ${PROJECT_NUM})
 		done
 	done
+	echo -e "$(timestamp) 완료"
 }
 
 main
