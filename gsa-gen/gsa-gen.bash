@@ -152,7 +152,7 @@ create_projects() {
 		fi
 		sleep 0.25s
 	fi
-	echo -e "$(timestamp) 프로젝트 ID   ${PROJECT_ID}"
+	echo -e "$(timestamp) 프로젝트 ID  ${PROJECT_ID}"
 	gcloud config set project ${PROJECT_ID} &>/dev/null
 	PROJECT_NAME=`gcloud projects list --filter="id=${PROJECT_ID}" --format="table(NAME)" | sed -n '2p' | sed -e 's/^\s//' -e 's/\s$//'`
 	echo -e "$(timestamp) 프로젝트 이름 ${PROJECT_NAME}"
@@ -250,20 +250,20 @@ create_sas() {
 		local name="${ID}-p${num_p}-sa${num_s}"
 		
 		# 서비스 계정 이메일 접미사 : xxx-p01-sa001@xxx-rclone01
-		local prefix=${name}@${PROJECT_NAME}
+		local prefix=${name}@${ID}-${PROJECT_NAME}
 		
 		# 서비스 계정 이메일
 		local email=${prefix}.iam.gserviceaccount.com
 		
 		# 서비스 계정 생성
-		echo -en "$(timestamp) + 생성   ${num_s}/${SAS_LIMIT}개 ${name}\r"
+		echo -en "$(timestamp) + 생성  ${num_s}/${SAS_LIMIT}개 ${name}\r"
 		gcloud iam service-accounts create ${name} &>/dev/null
 		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
 			echo
 		fi
 		
 		# 서비스 계정 키 생성
-		echo -en "$(timestamp) + 키     ${num_s}/${SAS_LIMIT}개\r"
+		echo -en "$(timestamp) + 키    ${num_s}/${SAS_LIMIT}개\r"
 		gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${prefix}.json" --iam-account=${email} &>/dev/null
 		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
 			echo
