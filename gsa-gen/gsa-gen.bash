@@ -154,7 +154,7 @@ create_projects() {
 	fi
 	echo -e "$(timestamp) 프로젝트 선택 ${PROJECT_ID}"
 	gcloud config set project ${PROJECT_ID} &>/dev/null
-	PROJECT_NAME=`gcloud projects list --filter="name=${PROJECT_ID}" --format="table(NAME)" | --format="table(NAME)" | sed -n '2p' | sed -e 's/^\s//' -e 's/\s$//'`
+	PROJECT_NAME=`gcloud projects list --filter="name=${PROJECT_ID}" --format="table(NAME)" | sed -n '2p' | sed -e 's/^\s//' -e 's/\s$//'`
 	echo -e "$(timestamp) 프로젝트 이름 ${PROJECT_NAME}"
 	echo
 }
