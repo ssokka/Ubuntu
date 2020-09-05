@@ -47,7 +47,7 @@
 - PROJECT_ID=""
   - 프로젝트 ID
     - 사용 시
-      - 지정한 이름대로 사용됩니다.
+      - 지정한 프로젝트의 SA를 수정합니다.
       - 3개 변수(PROJECT_START, PROJECT_END, PROJECT_SUFFIX)는 무시됩니다.
     - 미사용 시
       - 자동으로 지정됩니다.
