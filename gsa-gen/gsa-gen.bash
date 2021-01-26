@@ -10,6 +10,10 @@
 # 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_SUFFIX)는 무시된다.
 PROJECT_ID=""
 
+# 프로젝트 수동 번호
+# 사용할 경우 2개 변수(PROJECT_START, PROJECT_END)는 무시된다.
+PROJECT_NUMBER=
+
 # 프로젝트 시작 번호
 PROJECT_START=1
 
@@ -38,6 +42,10 @@ init() {
 	fi
 	if [[ PROJECT_END -gt 12 ]]; then
 		PROJECT_END=12
+	fi
+	if [[ -n "${PROJECT_NUMBER}" ]]; then
+		PROJECT_START=1
+		PROJECT_END=1
 	fi
 	if [[ -f "/app/sjva.py" ]]; then
 		DIR_WORK=${DIR_SJVA_WORK}
@@ -96,6 +104,7 @@ auth() {
 	echo -e "   + 5. 인증 코드 입력(Enter verification code)에 붙여넣으세요."
 	echo
 	gcloud auth login --brief
+	echo
 	if [[ $? != 0 ]]; then
 		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 자격 증명 실패"
 		echo
@@ -122,7 +131,8 @@ create_projects() {
 	if [[ -z "${PROJECT_ID}" ]]; then
 		# 프로젝트 ID 자동 : id-rclone-01
 		# ${1:-} : 프로젝트 번호 by for loop
-		PROJECT_ID="${ID}-${PROJECT_SUFFIX}-${1:-}"
+		#PROJECT_ID="${ID}-${PROJECT_SUFFIX}-${1:-}"
+		PROJECT_ID="${ID}-${PROJECT_SUFFIX}-$(printf "%05d" "${RANDOM}")$(printf "%05d" "${RANDOM}")"
 	fi
 	gcloud config set project ${PROJECT_ID} &>/dev/null
 	echo -e "$(timestamp) 프로젝트 목록"
@@ -130,8 +140,14 @@ create_projects() {
 	echo -e "${list}"
 	echo
 	if [[ ${list} != *"${PROJECT_ID}"* ]]; then
-		echo -e "$(timestamp) 프로젝트 생성 ${PROJECT_ID}"
-		gcloud projects create ${PROJECT_ID} &>/dev/null
+		echo -e "$(timestamp) 프로젝트 생성"
+		local p_name=${ID}-${PROJECT_SUFFIX}-p
+		if [[ -n "${PROJECT_NUMBER}" ]]; then
+			local p_name="${p_name}$(printf "%02d" ${PROJECT_NUMBER})"
+		else
+			local p_name="${p_name}$(printf "%02d" ${1:-})"
+		fi
+		gcloud projects create ${PROJECT_ID} --name="${p_name}" &>/dev/null
 		local code=$?
 		if [[ ${code} != 0 ]]; then
 			echo -e "$(timestamp) [ERROR] 프로젝트 생성 불가 ${PROJECT_ID}"
@@ -233,7 +249,7 @@ create_sas() {
 	local ess=",\n"						
 
 	# 서비스 계정 이메일 정보 파일
-	FILE_EMAIL="${DIR_WORK}/account-${ID}-${PROJECT_NAME}.txt"
+	FILE_EMAIL="${DIR_WORK}/account-${PROJECT_NAME}.txt"
 	touch "${FILE_EMAIL}"
 	
 	echo -e "$(timestamp) 서비스 계정"
@@ -246,16 +262,17 @@ create_sas() {
 		SAS_LIMIT=$(printf "%03d" ${SAS_LIMIT})
 
 		# 프로젝트 번호
-		local num_p=${1:-}
+		if [[ -n "${PROJECT_NUMBER}" ]]; then
+			local num_p=$(printf "%02d" ${PROJECT_NUMBER})
+		else
+			local num_p=${1:-}
+		fi
 		
 		# 서비스 계정 이름 : id-p01-sa001
 		local name="${ID}-p${num_p}-sa${num_s}"
 		
-		# 서비스 계정 이메일 접미사 : id-p01-sa001@project_id
-		local prefix=${name}@${PROJECT_ID}
-		
-		# 서비스 계정 이메일 : id-p01-sa001@project_name.iam.gserviceaccount.com
-		local email=${prefix}.iam.gserviceaccount.com
+		# 서비스 계정 이메일 : id-p01-sa001@project_id.iam.gserviceaccount.com
+		local email=${name}@${PROJECT_ID}.iam.gserviceaccount.com
 		
 		# 서비스 계정 생성
 		echo -en "$(timestamp) + 생성  ${num_s}/${SAS_LIMIT}개 ${name}\r"
@@ -265,7 +282,7 @@ create_sas() {
 		fi
 		
 		# 서비스 계정 키 파일명 (json)
-		local json=${ID}-${PROJECT_NAME}-sa${num_s}
+		local json=${PROJECT_NAME}-sa${num_s}
 		
 		# 서비스 계정 키 생성
 		echo -en "$(timestamp) + 키    ${num_s}/${SAS_LIMIT}개\r"
@@ -298,11 +315,12 @@ check_sas() {
 	echo -e "$(timestamp) + 서비스 계정   ${cnt_s}개"
 	
 	# 서비스 계정 키 개수 확인
-	local cnt_k=0
-	if [[ -d "${DIR_WORK}/${DIR_KEY}" ]]; then
-		cnt_k=$(ls -al "${DIR_WORK}/${DIR_KEY}/${ID}-${PROJECT_NAME}-*" | wc -l)
-	fi
-	echo -e "$(timestamp) + 서비스 키     ${cnt_k}개, 폴더 ${DIR_WORK}/${DIR_KEY}/"
+	# local cnt_k=0
+	# if [[ -d "${DIR_WORK}/${DIR_KEY}" ]]; then
+	# 	cnt_k=$(ls -al "${DIR_WORK}/${DIR_KEY}/${PROJECT_NAME}-*" | wc -l)
+	# fi
+	# echo -e "$(timestamp) + 서비스 키     ${cnt_k}개, 폴더 ${DIR_WORK}/${DIR_KEY}/"
+	echo -e "$(timestamp) + 서비스 키 폴더 ${DIR_WORK}/${DIR_KEY}/"
 	
 	# 서비스 계정 이메일 개수 확인
 	local cnt_e=$(cat "${FILE_EMAIL}" | wc -l)
