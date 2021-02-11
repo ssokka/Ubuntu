@@ -6,14 +6,6 @@
 # GitHub
 # https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
-WORK_FOLDER=${HOME} # 기본 작업 폴더
-KYES_FOLDER=accounts # 서비스 계정 키 폴더
-SJVA_FOLDER="/app/data/rclone_expand" # SJVA 도커 Rclone Expand 작업 폴더
-
-if [[ -f "/app/sjva.py" ]]; then
-	WORK_FOLDER=${SJVA_FOLDER}
-fi
-
 timestamp(){
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
@@ -186,7 +178,6 @@ create_sa() {
 	# 서비스 계정 키를 다시 다운로드할 방법이 없다.
 	# 서비스 계정 키 중복을 회피하는 간단한 방법은
 	# 서비스 계정을 모두 삭제한 후 다시 생성하면 된다.
-	mkdir -p "${WORK_FOLDER}/${KYES_FOLDER}"
 	gcloud config set project ${PROJECT_ID} &>/dev/null
 	if [[ -z ${PROJECT_NAME} ]]; then
 		PROJECT_NAME=$(gcloud projects list --filter="${PROJECT_ID}" --format="table(NAME)" | sed 1d)
@@ -209,6 +200,26 @@ create_sa() {
 		echo
 		runtime ${stime}
 	fi
+	WORK_FOLDER=${HOME}/accounts # 기본 작업 폴더
+	SJVA_FOLDER="/app/data/rclone_expand" # SJVA 도커 Rclone Expand 작업 폴더
+	if [[ -f "/app/sjva.py" ]]; then
+		WORK_FOLDER=${SJVA_FOLDER}
+	fi
+	while read -p "$(timestamp) 서비스 계정 키 폴더 경로 | " -e -i "${WORK_FOLDER}" WORK_FOLDER; do
+		if [[ ! -d "${WORK_FOLDER}" ]]; then
+			read -p "$(timestamp) 해당 경로 폴더 생성? [y|n] " choice
+			case ${choice:0:1} in
+				y|Y)
+					mkdir -p "${WORK_FOLDER}"
+					if [[ -d "${WORK_FOLDER}" ]]; then
+						break
+					fi
+				;;
+			esac
+		else
+			break
+		fi
+	done
 	local tes="" # 서비스 계정 이메일 전체 내용
 	local ess=",\n" # 서비스 계정 이메일 내용 구분자
 	read -p "$(timestamp) 서비스 계정 최대 개수 입력 | " -e -i "100" limit
@@ -224,14 +235,14 @@ create_sa() {
 		local mail="${name}@${PROJECT_ID}.iam.gserviceaccount.com"
 		echo -en "$(timestamp) 서비스 계정 생성 | ${name} | ${str_index}/${str_limit}\r"
 		gcloud iam service-accounts create ${name} &>/dev/null
-		gcloud iam service-accounts keys create "${WORK_FOLDER}/${KYES_FOLDER}/${json}" --iam-account=${mail} &>/dev/null
+		gcloud iam service-accounts keys create "${WORK_FOLDER}/${json}" --iam-account=${mail} &>/dev/null
 		if [[ ${tes} != *"${mail}"* ]]; then
 			tes+=${mail}${ess}
 		fi
     done
 	echo
 	runtime ${stime}
-	SA_EMAIL="${WORK_FOLDER}/account-${PROJECT_NAME}.txt"
+	SA_EMAIL="${WORK_FOLDER}/${PROJECT_NAME}.txt"
 	touch "${SA_EMAIL}"
 	echo -e ${tes} > "${SA_EMAIL}"
 }
@@ -241,19 +252,19 @@ check() {
 	s_count=$(cat "count.temp" | sed 1d | wc -l)
 	rm -f count.temp
 	echo --------------------------------------------------------------------------------
-	echo -e "$(timestamp) 구글 계정            ${GOOGLE_ACCOUNT}"
-	echo -e "$(timestamp) 프로젝트 ID          ${PROJECT_ID}"
-	echo -e "$(timestamp) 프로젝트 이름        ${PROJECT_NAME}"
-	echo -e "$(timestamp) 서비스 계정          ${s_count}개"
-	echo -e "$(timestamp) 서비스 계정 이메일   $(cat "${SA_EMAIL}" | wc -l)개"
-	echo -e "$(timestamp) 서비스 계정 키 폴더  ${WORK_FOLDER}/${KYES_FOLDER}"
-	echo -e "$(timestamp) 서비스 계정 키 파일  $(ls "${WORK_FOLDER}/${KYES_FOLDER}" | grep "${PROJECT_NAME}-sa" | wc -l)개"
+	echo -e "$(timestamp) 구글 계정                 ${GOOGLE_ACCOUNT}"
+	echo -e "$(timestamp) 프로젝트 ID               ${PROJECT_ID}"
+	echo -e "$(timestamp) 프로젝트 이름             ${PROJECT_NAME}"
+	echo -e "$(timestamp) 서비스 계정               ${s_count}개"
+	echo -e "$(timestamp) 서비스 계정 이메일        $(cat "${SA_EMAIL}" | wc -l)개"
+	echo -e "$(timestamp) 서비스 계정 키 폴더 경로  ${WORK_FOLDER}"
+	echo -e "$(timestamp) 서비스 계정 키 파일       $(ls "${WORK_FOLDER}" | grep "${PROJECT_NAME}-sa" | wc -l)개"
 	echo --------------------------------------------------------------------------------
 	read -p "$(timestamp) 서비스 계정 키 파일 확인? [y|n] " choice
 	case ${choice:0:1} in
 		y|Y)
 			echo --------------------------------------------------------------------------------
-			ls "${WORK_FOLDER}/${KYES_FOLDER}" | grep "${PROJECT_NAME}-sa"
+			ls "${WORK_FOLDER}" | grep "${PROJECT_NAME}-sa"
 		;;
 	esac
 	echo --------------------------------------------------------------------------------
