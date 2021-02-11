@@ -6,51 +6,13 @@
 # GitHub
 # https://github.com/ssokka/Ubuntu/tree/master/gsa-gen
 
-# 프로젝트 ID
-# 사용할 경우 3개 변수(PROJECT_START, PROJECT_END, PROJECT_SUFFIX)는 무시된다.
-PROJECT_ID=""
+WORK_FOLDER=${HOME} # 기본 작업 폴더
+KYES_FOLDER=accounts # 서비스 계정 키 폴더
+SJVA_FOLDER="/app/data/rclone_expand" # SJVA 도커 Rclone Expand 작업 폴더
 
-# 프로젝트 수동 번호
-# 사용할 경우 2개 변수(PROJECT_START, PROJECT_END)는 무시된다.
-PROJECT_NUMBER=
-
-# 프로젝트 시작 번호
-PROJECT_START=1
-
-# 프로젝트 종료 번호
-PROJECT_END=1
-
-# 프로젝트명 접미사
-PROJECT_SUFFIX=rclone
-
-# 프로젝트 당 서비스 계정 생성 개수, 최대 100개
-SAS_LIMIT=100
-
-# 기본 작업 폴더
-DIR_WORK=${HOME}
-
-# 서비스 계정 키 폴더
-DIR_KEY=accounts
-
-# SJVA 도커 Rclone Expand 작업 폴더
-DIR_SJVA_WORK="/app/data/rclone_expand"
-
-init() {
-	if [[ -n "${PROJECT_ID}" ]]; then
-		PROJECT_START=1
-		PROJECT_END=1
-	fi
-	if [[ PROJECT_END -gt 12 ]]; then
-		PROJECT_END=12
-	fi
-	if [[ -n "${PROJECT_NUMBER}" ]]; then
-		PROJECT_START=1
-		PROJECT_END=1
-	fi
-	if [[ -f "/app/sjva.py" ]]; then
-		DIR_WORK=${DIR_SJVA_WORK}
-	fi
-}
+if [[ -f "/app/sjva.py" ]]; then
+	WORK_FOLDER=${SJVA_FOLDER}
+fi
 
 timestamp(){
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')]"
@@ -58,17 +20,17 @@ timestamp(){
 
 runtime() {
 	local diff=$((($(date +"%s")-$1)))
-	echo "$(timestamp) + 소요 시간 $((${diff}/3600))h:$((${diff}/60))m:$((${diff}%60))s"
+	echo "$(timestamp) 소요 시간 | $((${diff}/3600))h:$((${diff}/60))m:$((${diff}%60))s"
 }
 
-install() {
+requirements() {
 	which bash &>/dev/null
 	if [[ $? != 0 ]]; then
 		echo -e "$(timestamp) Bash 설치\n"
 		apk add --no-cache bash
 		which bash &>/dev/null
 		if [[ $? != 0 ]]; then
-			echo -e "$(timestamp) [ERROR] Bash 설치 실패\n"
+			echo -e "$(timestamp) ! Bash 설치 실패\n"
 			exit
 		fi
 		echo
@@ -85,275 +47,236 @@ install() {
 			echo -e "$(timestamp) 구글 클라우드 SDK 삭제 명령어"
 			echo -e "$(timestamp) rm -rf ${HOME}/google-cloud-sdk"
 		else
-			echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 설치 실패"
-			echo
+			echo -e "$(timestamp) ! 구글 클라우드 SDK 설치 실패"
 			exit
 		fi
 		echo
+	else
+		echo -e "$(timestamp) 구글 클라우드 SDK 업데이트"
+		gcloud components update --quiet &>/dev/null
 	fi
 }
 
 auth() {
-	gcloud auth revoke --all &>/dev/null
 	echo -e "$(timestamp) 구글 클라우드 SDK 자격 증명"
-	echo
-	echo -e "   + 1. 웹 브라우저에서 아래 링크로 이동하세요."
-	echo -e "   + 2. 서비스 계정을 생성/수정할 구글 계정으로 로그인하세요."
-	echo -e "   + 3. Google Cloud SDK 엑세스 요청 화면에서 허용을 클릭하세요."
-	echo -e "   + 4. 인증 코드를 복사하세요."
-	echo -e "   + 5. 인증 코드 입력(Enter verification code)에 붙여넣으세요."
-	echo
-	gcloud auth login --brief
-	echo
-	if [[ $? != 0 ]]; then
-		echo -e "$(timestamp) [ERROR] 구글 클라우드 SDK 자격 증명 실패"
-		echo
-		exit
-	fi
-	local pattern="\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}\b"
-	ACCOUNT=$(gcloud auth list 2>&1 | grep -Eo ${pattern})
-	if [[ "${ACCOUNT}" == "" ]]; then
-		ACCOUNT=$(gcloud config list 2>&1 | grep -Eo ${pattern})
-	fi
-	if [[ "${ACCOUNT}" != "" ]]; then
-		ID=$(echo ${ACCOUNT} | grep -Eo "\b^[A-Za-z0-9._%+-]+\b" | sed "s/\./-/g")
-		echo -e "$(timestamp) 구글 계정 ${ACCOUNT}"
-		gcloud config set account ${ACCOUNT} &>/dev/null
-		echo
-	else
-		echo -e "$(timestamp) [ERROR] 구글 계정 확인 필요 ${ACCOUNT}"
-		echo
-		exit
-	fi
-}
-
-create_projects() {
-	if [[ -z "${PROJECT_ID}" ]]; then
-		# 프로젝트 ID 자동 : id-rclone-01
-		# ${1:-} : 프로젝트 번호 by for loop
-		#PROJECT_ID="${ID}-${PROJECT_SUFFIX}-${1:-}"
-		PROJECT_ID="${ID}-${PROJECT_SUFFIX}-$(printf "%05d" "${RANDOM}")$(printf "%05d" "${RANDOM}")"
-	fi
-	gcloud config set project ${PROJECT_ID} &>/dev/null
-	echo -e "$(timestamp) 프로젝트 목록"
-	local list=$(gcloud projects list)
-	echo -e "${list}"
-	echo
-	if [[ ${list} != *"${PROJECT_ID}"* ]]; then
-		echo -e "$(timestamp) 프로젝트 생성"
-		local p_name=${ID}-${PROJECT_SUFFIX}-p
-		if [[ -n "${PROJECT_NUMBER}" ]]; then
-			local p_name="${p_name}$(printf "%02d" ${PROJECT_NUMBER})"
+	while read -p "$(timestamp) 구글 계정 입력 | " GOOGLE_ACCOUNT; do
+		if [[ "${GOOGLE_ACCOUNT}" == "" ]]; then
+			echo -en "\033[1A\033[2K"
 		else
-			local p_name="${p_name}$(printf "%02d" ${1:-})"
+			break
 		fi
-		gcloud projects create ${PROJECT_ID} --name="${p_name}" &>/dev/null
-		local code=$?
-		if [[ ${code} != 0 ]]; then
-			echo -e "$(timestamp) [ERROR] 프로젝트 생성 불가 ${PROJECT_ID}"
-			case ${code} in
-				1)
-					echo -e "+ 프로젝트 ID 중복 ${PROJECT_ID}"
-					;;
-				2)
-					echo -e "+ 프로젝트 ID 규칙 오류"
-					echo -e "  https://cloud.google.com/sdk/gcloud/reference/projects/create?hl=ko#PROJECT"
-					;;
-				*)
-					echo -e "+ 프로젝트 할당량 초과"
-					echo -e "  https://cloud.google.com/resource-manager/docs/creating-managing-projects?hl=ko#managing_project_quotas"
-					echo -e "오류 코드 번호 : ${code}"
-					;; # 오류 코드 확인 필요
-			esac
-			echo
+	done
+	if [[ $(gcloud auth list 2>&1 | grep ${GOOGLE_ACCOUNT}) == "" ]]; then
+		#gcloud auth revoke --all &>/dev/null
+		echo -e "\n1. 웹 브라우저에서 아래 링크로 이동하세요."
+		echo -e "2. 서비스 계정을 생성/수정할 구글 계정으로 로그인하세요."
+		echo -e "3. Google Cloud SDK 엑세스 요청 화면에서 허용을 클릭하세요."
+		echo -e "4. 인증 코드를 복사하세요."
+		echo -e "5. 인증 코드 입력(Enter verification code)에 붙여넣으세요.\n"
+		gcloud auth login
+		if [[ $? != 0 ]]; then
+			echo -e "\n$(timestamp) [오류] 구글 클라우드 SDK 자격 증명 실패"
 			exit
 		fi
-		sleep 0.25s
 	fi
-	echo -e "$(timestamp) 프로젝트 ID  ${PROJECT_ID}"
-	gcloud config set project ${PROJECT_ID} &>/dev/null
-	PROJECT_NAME=`gcloud projects list --filter="id=${PROJECT_ID}" --format="table(NAME)" | sed -n '2p' | sed -e 's/^\s//' -e 's/\s$//'`
-	echo -e "$(timestamp) 프로젝트 이름 ${PROJECT_NAME}"
-	echo
+	GOOGLE_ID=$(echo ${GOOGLE_ACCOUNT} | grep -Eo "\b^[A-Za-z0-9._%+-]+\b" | sed "s/\./-/g")
 }
 
-enable_apis() {
-	# 필수 APIs
-	local e_apis=("drive.googleapis.com")
-	
-	# 불필요 APIs
-	local d_apis=""
-	
-	# 필수 APIs 제외 필터
-	local filter=""
-	
-	# 필수 APIs 단일 라인
-	local tmp=""
-	
+select_project() {
+	gcloud config set account ${GOOGLE_ACCOUNT} &>/dev/null
+	local list=$(gcloud projects list)
+	echo --------------------------------------------------------------------------------
+	echo -e "${list}"
+	echo --------------------------------------------------------------------------------
+	read -p "$(timestamp) PROJECT_ID 입력 | 빈칸 = 프로젝트 생성 | " PROJECT_ID
+}
+
+create_project() {
+	if [[ -z ${PROJECT_ID} ]]; then
+		while read -p "$(timestamp) 프로젝트 생성 ID 이름 입력 | " -e -i "rclone" PROJECT_NAME; do
+			if [[ -z "${PROJECT_NAME}" ]]; then
+				echo -en "\033[1A\033[2K"
+			else
+				break
+			fi
+		done
+		while read -p "$(timestamp) 프로젝트 생성 번호 입력    | " -e -i "1" PROJECT_NUMBER; do
+			if [[ -z "${PROJECT_NUMBER}" ]]; then
+				echo -en "\033[1A\033[2K"
+			else
+				break
+			fi
+		done
+		PROJECT_ID=${PROJECT_NAME}-$(printf "%05d" "${RANDOM}")$(printf "%05d" "${RANDOM}")
+		PROJECT_NUMBER=$(printf "%02d" "${PROJECT_NUMBER}")
+		echo -e "$(timestamp) 프로젝트 생성 ID   | ${PROJECT_ID}"
+		echo -e "$(timestamp) 프로젝트 생성 이름 | ${GOOGLE_ID}-${PROJECT_NAME}"
+		while read -p "$(timestamp) 프로젝트 생성 진행? [y|n] " choice; do
+			case ${choice} in
+				[yY] ) choice="true"; break;;
+				[nN] ) choice="false"; break;;
+				* ) echo -en "\033[1A\033[2K";;
+			esac
+		done
+		if [[ "${choice}" == "true" ]]; then
+			gcloud projects create ${PROJECT_ID} --name="${GOOGLE_ID}-${PROJECT_NAME}" &>/dev/null
+			local code=$?
+			# code=0 # 테스트
+			if [[ ${code} != 0 ]]; then
+				case ${code} in
+					1)
+						echo -e "$(timestamp) ! 프로젝트 ID 중복"
+						PROJECT_ID=
+						create_project
+						;;
+					2)
+						echo -e "$(timestamp) ! 프로젝트 ID 규칙 오류"
+						echo -e "$(timestamp) ! https://cloud.google.com/sdk/gcloud/reference/projects/create?hl=ko#PROJECT"
+						;;
+					*)
+						echo -e "$(timestamp) ! 프로젝트 할당량 초과"
+						echo -e "$(timestamp) ! https://cloud.google.com/resource-manager/docs/creating-managing-projects?hl=ko#managing_project_quotas"
+						echo -e "$(timestamp) ! 오류 코드 번호 | ${code}"
+						;; # 오류 코드 확인 필요
+				esac
+				exit
+			fi
+			sleep 0.25s
+		else
+			echo -e "$(timestamp) 구글 서비스 계정 생성 종료"
+			echo --------------------------------------------------------------------------------
+			exit
+		fi
+	fi
+}
+
+enable_api() {
+	gcloud config set project ${PROJECT_ID} &>/dev/null
+	local code=$?
+	if [[ ${code} != 0 ]]; then
+		echo -e "$(timestamp) ! 프로젝트 ID '${PROJECT_ID}' 조회 불가"
+		exit
+	fi
+	local e_apis=("drive.googleapis.com") # 필수 APIs
+	local d_apis="" # 불필요 APIs
+	local filter="" # 필수 APIs 제외 필터
+	local tmp="" # 필수 APIs 단일 라인
 	for api in ${e_apis[@]}; do
 		tmp+="${api} "
 		filter+="NOT config.name=${api} AND "
 	done
 	filter=${filter:0:-5}
-	
 	for api in $(gcloud services list --filter="${filter}" --format="table(NAME)" | sed 1d); do
 		d_apis+="${api} "
 	done
-	
 	e_apis=${tmp:0:-1}
-	
 	if [[ "${d_apis}" != "" ]]; then
 		echo -e "$(timestamp) 불필요한 API 사용 중지"
 		while read -r line; do
-			echo -e "- ${line}"
+			echo -e "$(timestamp) - ${line}"
 		done <<< $(gcloud services list --filter="${filter}" --format="table(TITLE)" | sed 1d)
 		gcloud services disable --force ${d_apis:0:-1} &>/dev/null
-		echo
 	fi
 	echo -e "$(timestamp) 구글 드라이브 API 사용"
 	gcloud services enable ${e_apis} &>/dev/null
-	echo
 }
 
-create_sas() {
+create_sa() {
 	# 2020.08.12
 	# 서비스 계정 키를 다시 다운로드할 방법이 없다.
 	# 서비스 계정 키 중복을 회피하는 간단한 방법은
 	# 서비스 계정을 모두 삭제한 후 다시 생성하면 된다.
-
-	# 서비스 계정 목록
-	local list=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d)
-
-	# 서비스 계정 개수
-	local total=$(echo "${list}" | wc -l)
+	mkdir -p "${WORK_FOLDER}/${KYES_FOLDER}"
+	gcloud config set project ${PROJECT_ID} &>/dev/null
+	if [[ -z ${PROJECT_NAME} ]]; then
+		PROJECT_NAME=$(gcloud projects list --filter="${PROJECT_ID}" --format="table(NAME)" | sed 1d)
+	fi
+	if [[ -z ${PROJECT_NUMBER} ]]; then
+		PROJECT_NUMBER=$(echo ${PROJECT_ID} | cut -f 1 -d'-' | grep -Eo '[0-9]+' | sed -n '1p')
+		PROJECT_NUMBER=$(printf "%02d" ${PROJECT_NUMBER})
+	fi
+	local items=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d) # 서비스 계정 이메일 목록
+	local items=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d) # 서비스 계정 이메일 목록
+	local total=$(echo "${items}" | wc -l) # 서비스 계정 전체 개수
 	total=$(printf "%03d" ${total})
-
-	# 서비스 계정 키 중복 방지
-	if [[ -n "${list}" ]]; then
+	if [[ -n "${items}" ]]; then # 서비스 계정 키 중복 방지
 		local count=1
 		local stime=$(date +"%s")
-		for email in ${list}; do
-			echo -en "$(timestamp) 기존 서비스 계정 삭제 (키 중복 방지) $(printf "%03d" ${count})/${total}개\r"
-			gcloud iam service-accounts delete ${email} --quiet &>/dev/null
+		for item in ${items}; do
+			echo -en "$(timestamp) 기존 서비스 계정 삭제 | 키 중복 방지 | $(printf "%03d" ${count})/${total}\r"
+			gcloud iam service-accounts delete ${item} --quiet &>/dev/null
 			((count++))
 		done
 		echo
 		runtime ${stime}
-		echo
 	fi
-
-	# 서비스 계정 이메일 전체 내용
-	local tes=""
-
-	# 서비스 계정 이메일 내용 구분자
-	local ess=",\n"						
-
-	# 서비스 계정 이메일 정보 파일
-	FILE_EMAIL="${DIR_WORK}/account-${PROJECT_NAME}.txt"
-	touch "${FILE_EMAIL}"
-	
-	echo -e "$(timestamp) 서비스 계정"
+	local tes="" # 서비스 계정 이메일 전체 내용
+	local ess=",\n" # 서비스 계정 이메일 내용 구분자
+	read -p "$(timestamp) 서비스 계정 최대 개수 입력 | " -e -i "100" limit
 	local stime=$(date +"%s")
-	for num_s in $(seq 1 ${SAS_LIMIT}); do
-		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
+	for index in $(seq 1 ${limit}); do
+		if [[ ${index} == ${limit} ]]; then
 			ess=""
 		fi
-		num_s=$(printf "%03d" ${num_s})
-		SAS_LIMIT=$(printf "%03d" ${SAS_LIMIT})
-
-		# 프로젝트 번호
-		if [[ -n "${PROJECT_NUMBER}" ]]; then
-			local num_p=$(printf "%02d" ${PROJECT_NUMBER})
-		else
-			local num_p=${1:-}
-		fi
-		
-		# 서비스 계정 이름 : id-p01-sa001
-		local name="${ID}-p${num_p}-sa${num_s}"
-		
-		# 서비스 계정 이메일 : id-p01-sa001@project_id.iam.gserviceaccount.com
-		local email=${name}@${PROJECT_ID}.iam.gserviceaccount.com
-		
-		# 서비스 계정 생성
-		echo -en "$(timestamp) + 생성  ${num_s}/${SAS_LIMIT}개 ${name}\r"
+		str_index=$(printf "%03d" ${index})
+		str_limit=$(printf "%03d" ${limit})
+		local name="${GOOGLE_ID}-p${PROJECT_NUMBER}-sa${str_index}"
+		local json="${PROJECT_NAME}-sa${str_index}.json"
+		local mail="${name}@${PROJECT_ID}.iam.gserviceaccount.com"
+		echo -en "$(timestamp) 서비스 계정 생성 | ${name} | ${str_index}/${str_limit}\r"
 		gcloud iam service-accounts create ${name} &>/dev/null
-		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
-			echo
-		fi
-		
-		# 서비스 계정 키 파일명 (json)
-		local json=${PROJECT_NAME}-sa${num_s}
-		
-		# 서비스 계정 키 생성
-		echo -en "$(timestamp) + 키    ${num_s}/${SAS_LIMIT}개\r"
-		gcloud iam service-accounts keys create "${DIR_WORK}/${DIR_KEY}/${json}.json" --iam-account=${email} &>/dev/null
-		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
-			echo
-		fi
-		
-		# 서비스 계정 이메일 저장
-		echo -en "$(timestamp) + 이메일 ${num_s}/${SAS_LIMIT}개\r"
-		if [[ ${tes} != *"${email}"* ]]; then
-			tes+=${email}${ess}
-		fi
-		if [[ ${num_s} == ${SAS_LIMIT} ]]; then
-			echo
+		gcloud iam service-accounts keys create "${WORK_FOLDER}/${KYES_FOLDER}/${json}" --iam-account=${mail} &>/dev/null
+		if [[ ${tes} != *"${mail}"* ]]; then
+			tes+=${mail}${ess}
 		fi
     done
+	echo
 	runtime ${stime}
-	echo -e ${tes} > "${FILE_EMAIL}"
+	SA_EMAIL="${WORK_FOLDER}/account-${PROJECT_NAME}.txt"
+	touch "${SA_EMAIL}"
+	echo -e ${tes} > "${SA_EMAIL}"
 }
 
-check_sas() {
-	sleep 1s
-	echo
-	echo -e "$(timestamp) 확인"
-	echo -e "$(timestamp) + 프로젝트 이름 ${PROJECT_NAME}"
-
-	# 서비스 계정 개수 확인
-	local cnt_s=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d | wc -l)
-	echo -e "$(timestamp) + 서비스 계정   ${cnt_s}개"
-	
-	# 서비스 계정 키 개수 확인
-	# local cnt_k=0
-	# if [[ -d "${DIR_WORK}/${DIR_KEY}" ]]; then
-	# 	cnt_k=$(ls -al "${DIR_WORK}/${DIR_KEY}/${PROJECT_NAME}-*" | wc -l)
-	# fi
-	# echo -e "$(timestamp) + 서비스 키     ${cnt_k}개, 폴더 ${DIR_WORK}/${DIR_KEY}/"
-	echo -e "$(timestamp) + 서비스 키 폴더 ${DIR_WORK}/${DIR_KEY}/"
-	
-	# 서비스 계정 이메일 개수 확인
-	local cnt_e=$(cat "${FILE_EMAIL}" | wc -l)
-	echo -e "$(timestamp) + 서비스 이메일 ${cnt_e}개, 파일 ${FILE_EMAIL}"
-	echo
+check() {
+	gcloud iam service-accounts list --format="table(EMAIL)" > count.temp
+	s_count=$(cat "count.temp" | sed 1d | wc -l)
+	rm -f count.temp
+	echo --------------------------------------------------------------------------------
+	echo -e "$(timestamp) 구글 계정            ${GOOGLE_ACCOUNT}"
+	echo -e "$(timestamp) 프로젝트 ID          ${PROJECT_ID}"
+	echo -e "$(timestamp) 프로젝트 이름        ${PROJECT_NAME}"
+	echo -e "$(timestamp) 서비스 계정          ${s_count}개"
+	echo -e "$(timestamp) 서비스 계정 이메일   $(cat "${SA_EMAIL}" | wc -l)개"
+	echo -e "$(timestamp) 서비스 계정 키 폴더  ${WORK_FOLDER}/${KYES_FOLDER}"
+	echo -e "$(timestamp) 서비스 계정 키 파일  $(ls "${WORK_FOLDER}/${KYES_FOLDER}" | grep "${PROJECT_NAME}-sa" | wc -l)개"
+	echo --------------------------------------------------------------------------------
+	read -p "$(timestamp) 서비스 계정 키 파일 확인? [y|n] " choice
+	case ${choice:0:1} in
+		y|Y)
+			echo --------------------------------------------------------------------------------
+			ls "${WORK_FOLDER}/${KYES_FOLDER}" | grep "${PROJECT_NAME}-sa"
+		;;
+	esac
+	echo --------------------------------------------------------------------------------
+	read -p "$(timestamp) 서비스 계정 이메일 확인? [y|n] " choice
+	case ${choice:0:1} in
+		y|Y)
+			echo --------------------------------------------------------------------------------
+			cat "${SA_EMAIL}"
+		;;
+	esac
 }
 
-sas_email() {
-	if [[ -f "${FILE_EMAIL}" && $((${PROJECT_END}-${PROJECT_START})) == 0 ]]; then
-		read -p "$(timestamp) 서비스 계정 이메일 확인 (y/n)? " answer
-		case ${answer:0:1} in
-			y|Y)
-				cat "${FILE_EMAIL}"
-			;;
-		esac
-		echo
-	fi
-}
-
-main() {
-	echo -e "\n$(timestamp) 구글 서비스 계정 생성 스크립트\n"
-	init
-	install
-	auth
-	for PROJECT_NUM in $(seq ${PROJECT_START} ${PROJECT_END}); do
-		if [[ $((${PROJECT_END}-${PROJECT_START})) != 0 ]]; then
-			echo
-		fi
-		for function in create_projects enable_apis create_sas check_sas sas_email; do
-			eval ${function} $(printf "%02d" ${PROJECT_NUM})
-		done
-	done
-	echo -e "$(timestamp) 완료"
-}
-
-main
+echo --------------------------------------------------------------------------------
+echo -e "$(timestamp) 구글 서비스 계정 생성 시작"
+echo --------------------------------------------------------------------------------
+requirements
+auth
+select_project
+create_project
+enable_api
+create_sa
+check
+echo --------------------------------------------------------------------------------
+echo -e "$(timestamp) 구글 서비스 계정 생성 완료"
+echo --------------------------------------------------------------------------------
