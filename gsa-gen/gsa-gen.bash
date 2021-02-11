@@ -196,7 +196,6 @@ create_sa() {
 		PROJECT_NUMBER=$(printf "%02d" ${PROJECT_NUMBER})
 	fi
 	local items=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d) # 서비스 계정 이메일 목록
-	local items=$(gcloud iam service-accounts list --format="table(EMAIL)" | sed 1d) # 서비스 계정 이메일 목록
 	local total=$(echo "${items}" | wc -l) # 서비스 계정 전체 개수
 	total=$(printf "%03d" ${total})
 	if [[ -n "${items}" ]]; then # 서비스 계정 키 중복 방지
